@@ -1,0 +1,468 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// ─────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum ContactType {
+  CLIENT
+  PROSPECT
+}
+
+enum ContactOrigin {
+  WHATSAPP
+  FACEBOOK
+  INSTAGRAM
+  TIKTOK
+  RECOMENDADO
+  FAMILIA
+  AMIGO
+  STAND
+  GOOGLE_MAPS
+  PUBLICIDAD
+  SITIO_WEB
+  OTRO
+}
+
+enum ContactStatus {
+  ACTIVE
+  INACTIVE
+  PENDING
+}
+
+enum PolicyType {
+  VIDA
+  AUTO
+  OTRO
+}
+
+enum CoverageType {
+  AMPLIA
+  LIMITADA
+  BASICA
+  RC
+}
+
+enum Currency {
+  MXN
+  USD
+  UDI
+}
+
+enum PaymentFrequency {
+  MENSUAL
+  TRIMESTRAL
+  SEMESTRAL
+  ANUAL
+}
+
+enum PaymentMethod {
+  EFECTIVO
+  TRANSFERENCIA
+  TARJETA
+  CHEQUE
+  DOMICILIACION
+  OTRO
+}
+
+enum PaymentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+enum PolicyStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  RENEWAL
+}
+
+enum PensionLaw {
+  IMSS_LEY73
+  AFORE_LEY97
+  OTRO
+}
+
+enum PensionRequestType {
+  ASESORIA
+  TRAMITE
+  OTRO
+}
+
+enum ServiceStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum VehicleServiceType {
+  ALTA
+  BAJA
+  PLACAS_NUEVAS
+  RENOVACION_PLACAS
+  TARJETA_CIRCULACION
+  OTRO
+}
+
+enum VehicleRequestMode {
+  COTIZACION
+  TRAMITE
+}
+
+enum ProspectStage {
+  CONTACTO_INICIAL
+  SEGUIMIENTO
+  COTIZACION
+  CIERRE
+}
+
+enum Priority {
+  BAJA
+  MEDIA
+  ALTA
+  ATENCION
+}
+
+enum ProspectStatus {
+  ACTIVE
+  WON
+  LOST
+}
+
+enum ActivityType {
+  LLAMADA
+  EMAIL
+  WHATSAPP
+  NOTA
+  VISITA
+  DOCUMENTO
+}
+
+enum ActivityResult {
+  EXITOSO
+  PENDIENTE
+  SIN_RESPUESTA
+  FINALIZADO
+}
+
+enum EventType {
+  RENOVACION
+  COBRO_PAGO
+  SEGUIMIENTO
+  LLAMADA
+  TAREA
+}
+
+enum EventStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+enum TaskType {
+  LLAMADA
+  EMAIL
+  VISITA
+  REUNION
+  OTRO
+}
+
+enum NextActionType {
+  LLAMADA
+  CITA
+  EMAIL
+  OTRO
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  VIEW
+}
+
+// ─────────────────────────────────────────
+// MODELOS
+// ─────────────────────────────────────────
+
+model User {
+  id        String   @id @default(uuid())
+  name      String   @db.VarChar(150)
+  email     String   @unique @db.VarChar(255)
+  password  String   @db.VarChar(255)
+  role      UserRole @default(USER)
+  avatar    String?  @db.VarChar(500)
+  title     String?  @db.VarChar(100) // ej. "Broker Senior", "Gestor de Cuentas"
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  contacts       Contact[]        @relation("AssignedContacts")
+  prospects      Prospect[]       @relation("AssignedProspects")
+  calendarEvents CalendarEvent[]
+  activities     Activity[]
+  auditLogs      AuditLog[]
+
+  @@map("users")
+}
+
+model Contact {
+  id         String        @id @default(uuid())
+  code       String        @unique @db.VarChar(20) // SM-XXXX
+  type       ContactType   @default(PROSPECT)
+  fullName   String        @db.VarChar(200)
+  phone      String        @db.VarChar(20)
+  email      String?       @db.VarChar(255)
+  photo      String?       @db.VarChar(500) // ruta de foto de perfil en /uploads
+  birthDate  DateTime?     @db.Date
+  activity   String?       @db.VarChar(200) // Ocupación / actividad profesional
+  city       String?       @db.VarChar(100)
+  state      String?       @db.VarChar(100)
+  origin     ContactOrigin
+  status     ContactStatus @default(PENDING)
+  notes      String?       @db.Text
+  assignedTo String?
+
+  assignedUser   User?            @relation("AssignedContacts", fields: [assignedTo], references: [id])
+  policies       Policy[]
+  pensionServices PensionService[]
+  vehicleServices VehicleService[]
+  prospects      Prospect[]
+  activities     Activity[]
+  calendarEvents CalendarEvent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([type, status])
+  @@index([assignedTo])
+  @@index([phone])
+  @@index([email])
+  @@map("contacts")
+}
+
+model Policy {
+  id               String           @id @default(uuid())
+  contactId        String
+  policyNumber     String           @unique @db.VarChar(100)
+  type             PolicyType
+  plan             String?          @db.VarChar(200)
+  insurer          String?          @db.VarChar(200) // GNP, AXA, Qualitas, Mapfre...
+  startDate        DateTime         @db.Date
+  endDate          DateTime         @db.Date
+  paymentFrequency PaymentFrequency @default(ANUAL)
+  premium          Decimal          @db.Decimal(12, 2)
+  sumInsured       Decimal?         @db.Decimal(15, 2)
+  beneficiaries    String?          @db.Text
+  status           PolicyStatus     @default(ACTIVE)
+  documents        Json?            // rutas de archivos
+  notes            String?          @db.Text
+
+  // Campos específicos de AUTO
+  insuredAsset     String?          @db.Text      // Descripción del auto / bien asegurado
+  coverageType     CoverageType?                  // Amplia, Limitada, Básica, RC
+  vehiclePhoto     String?          @db.VarChar(500) // foto del vehículo
+
+  // Campos específicos de VIDA
+  currency         Currency?                      // MXN, USD, UDI
+  term             String?          @db.VarChar(100) // Plazo (ej. "20 años", "vitalicio")
+
+  // Archivo adjunto de la póliza
+  policyFile       String?          @db.VarChar(500) // ruta del archivo PDF/imagen
+
+  // Trazabilidad de renovaciones
+  renewedFromId    String?          @unique
+  renewedFrom      Policy?  @relation("PolicyRenewals", fields: [renewedFromId], references: [id], onDelete: SetNull)
+  renewedBy        Policy?  @relation("PolicyRenewals")
+
+  contact   Contact    @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  activities Activity[]
+  payments  Payment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([contactId])
+  @@index([renewedFromId])
+  @@index([endDate])
+  @@index([status])
+  @@map("policies")
+}
+
+model PensionService {
+  id              String             @id @default(uuid())
+  contactId       String
+  requestDate     DateTime           @db.Date
+  requestType     PensionRequestType @default(ASESORIA)
+  pensionLaw      PensionLaw?
+  cost            Decimal            @db.Decimal(10, 2)
+  advance         Decimal?           @db.Decimal(10, 2)
+  advanceDate     DateTime?          @db.Date
+  settlement      Decimal?           @db.Decimal(10, 2)
+  settlementDate  DateTime?          @db.Date
+  description     String?            @db.Text
+  bitacora        String?            @db.Text
+  status          ServiceStatus      @default(PENDING)
+
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([contactId])
+  @@map("pension_services")
+}
+
+model VehicleService {
+  id          String              @id @default(uuid())
+  contactId   String
+  startDate   DateTime            @db.Date
+  serviceType VehicleServiceType
+  requestMode VehicleRequestMode  @default(TRAMITE)
+  description String?             @db.Text
+  quote       Decimal?            @db.Decimal(10, 2)
+  status      ServiceStatus       @default(PENDING)
+  documents   Json?               // { ine: bool, tarjetaCirculacion: bool, factura: bool, titulo: bool }
+
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([contactId])
+  @@map("vehicle_services")
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  policyId      String
+  amount        Decimal       @db.Decimal(12, 2)
+  paymentDate   DateTime      @db.Date
+  periodStart   DateTime?     @db.Date
+  periodEnd     DateTime?     @db.Date
+  method        PaymentMethod @default(TRANSFERENCIA)
+  reference     String?       @db.VarChar(100) // Num. operación, folio, etc.
+  notes         String?       @db.Text
+  status        PaymentStatus @default(CONFIRMED)
+
+  policy Policy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([policyId])
+  @@index([paymentDate])
+  @@index([status])
+  @@map("payments")
+}
+
+model Prospect {
+  id                String         @id @default(uuid())
+  code              String         @unique @db.VarChar(20) // PR-XXX
+  contactId         String
+  stage             ProspectStage  @default(CONTACTO_INICIAL)
+  priority          Priority       @default(MEDIA)
+  serviceOfInterest String?        @db.VarChar(200)
+  estimatedValue    Decimal?       @db.Decimal(12, 2)
+  probability       Int            @default(50) // 0-100
+  assignedTo        String?
+  notes             String?        @db.Text
+  nextActionType    NextActionType?
+  nextActionDate    DateTime?
+  rating            Int            @default(3) // 1-5 estrellas
+  status            ProspectStatus @default(ACTIVE)
+
+  contact      Contact    @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  assignedUser User?      @relation("AssignedProspects", fields: [assignedTo], references: [id])
+  activities   Activity[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([stage, status])
+  @@index([assignedTo])
+  @@map("prospects")
+}
+
+model Activity {
+  id          String         @id @default(uuid())
+  contactId   String
+  prospectId  String?
+  policyId    String?
+  type        ActivityType
+  summary     String         @db.Text
+  result      ActivityResult @default(PENDIENTE)
+  performedBy String
+  isAutomatic Boolean        @default(false)
+  attachments Json?          // rutas archivos
+
+  contact     Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  prospect    Prospect? @relation(fields: [prospectId], references: [id])
+  policy      Policy?   @relation(fields: [policyId], references: [id])
+  performer   User      @relation(fields: [performedBy], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([contactId])
+  @@index([prospectId])
+  @@index([createdAt])
+  @@map("activities")
+}
+
+model CalendarEvent {
+  id              String      @id @default(uuid())
+  title           String      @db.VarChar(300)
+  type            EventType
+  contactId       String?
+  userId          String
+  startDate       DateTime
+  endDate         DateTime
+  description     String?     @db.Text
+  priority        Priority    @default(MEDIA)
+  notifyClient    Boolean     @default(false)
+  notifyAgent     Boolean     @default(true)
+  reminderMinutes Int         @default(15)
+  attachments     Json?
+  status          EventStatus @default(PENDING)
+  syncGoogle      Boolean     @default(false)
+
+  contact Contact? @relation(fields: [contactId], references: [id])
+  user    User     @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, startDate])
+  @@index([type, status])
+  @@map("calendar_events")
+}
+
+model AuditLog {
+  id        String      @id @default(uuid())
+  userId    String
+  entity    String      @db.VarChar(100)
+  entityId  String      @db.VarChar(36)
+  action    AuditAction
+  changes   Json?
+  ipAddress String?     @db.VarChar(50)
+  createdAt DateTime    @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([entity, entityId])
+  @@index([userId])
+  @@map("audit_log")
+}
