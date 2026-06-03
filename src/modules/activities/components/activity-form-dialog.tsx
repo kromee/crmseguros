@@ -74,17 +74,19 @@ export function ActivityFormDialog({
   } = form;
 
   useEffect(() => {
-    if (open) {
-      reset({
-        contactId,
-        type: "LLAMADA",
-        summary: "",
-        result: "PENDIENTE",
-        isAutomatic: false,
-        ...defaultValues,
-      } as never);
+    if (!open) return;
+    reset({
+      contactId,
+      type: "LLAMADA",
+      summary: "",
+      result: "PENDIENTE",
+      isAutomatic: false,
+      ...defaultValues,
+    } as never);
+    const timer = window.setTimeout(() => {
       setAttachments(defaultValues?.attachments ?? []);
-    }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [open, contactId, defaultValues, reset]);
 
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {

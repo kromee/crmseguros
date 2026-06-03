@@ -225,8 +225,11 @@ export function CalendarMonthView({
     if (!focusEventId) return;
     const event = events.find((e) => e.id === focusEventId);
     if (!event) return;
-    setHighlightedEventId(focusEventId);
-    setDayOpen(startOfDay(new Date(event.startDate)));
+    const timer = window.setTimeout(() => {
+      setHighlightedEventId(focusEventId);
+      setDayOpen(startOfDay(new Date(event.startDate)));
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [focusEventId, events]);
 
   useEffect(() => {

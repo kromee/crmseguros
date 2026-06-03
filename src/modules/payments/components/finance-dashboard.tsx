@@ -12,6 +12,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 import { POLICY_TYPES } from "@/core/constants";
 import { formatCurrency, formatDate } from "@/core/utils/format";
 
@@ -100,6 +101,7 @@ function StatCard({
 }
 
 export function FinanceDashboard({ data }: Props) {
+  const [referenceDate] = useState(() => Date.now());
   const pendingPremium = data.totalPremiums - data.totalPayments;
   const collectionRate =
     data.totalPremiums > 0
@@ -265,7 +267,7 @@ export function FinanceDashboard({ data }: Props) {
             <div className="space-y-2">
               {data.upcomingPolicies.map((p) => {
                 const daysLeft = Math.ceil(
-                  (new Date(p.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+                  (new Date(p.endDate).getTime() - referenceDate) / (1000 * 60 * 60 * 24)
                 );
                 const urgent = daysLeft <= 15;
 

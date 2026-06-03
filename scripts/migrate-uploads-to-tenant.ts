@@ -7,7 +7,7 @@
  *   npm run uploads:migrate -- --apply
  */
 import "dotenv/config";
-import { copyFile, mkdir, rename, stat, unlink } from "fs/promises";
+import { copyFile, mkdir, rename, stat } from "fs/promises";
 import path from "path";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "@prisma/client";

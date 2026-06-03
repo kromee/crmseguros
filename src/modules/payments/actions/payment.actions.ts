@@ -36,10 +36,7 @@ export async function createPaymentAction(
   }
 }
 
-export async function deletePaymentAction(
-  id: string,
-  _policyId: string
-): Promise<ActionResult> {
+export async function deletePaymentAction(id: string): Promise<ActionResult> {
   try {
     const session = await requireTenantSession();
     await paymentService.delete(session.tenantId, id);

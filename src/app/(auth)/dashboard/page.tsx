@@ -1,5 +1,4 @@
 import {
-  AlertTriangle,
   ArrowRight,
   Briefcase,
   Calendar,
@@ -9,7 +8,6 @@ import {
   CreditCard,
   DollarSign,
   FileText,
-  Info,
   MessageCircle,
   Phone,
   RefreshCw,
@@ -26,7 +24,6 @@ import { prisma } from "@/infrastructure/prisma/client";
 import {
   dashboardService,
   formatProjectedRevenue,
-  type DashboardAlert,
 } from "@/modules/dashboard/services/dashboard.service";
 import { NewEventButton } from "@/modules/calendar/components/new-event-button";
 import { AlertsPanel } from "@/modules/dashboard/components/alerts-panel";

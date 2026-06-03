@@ -157,12 +157,6 @@ function priorityLabel(value: string) {
   return PRIORITIES.find((p) => p.value === value)?.label ?? value;
 }
 
-const STATUS_BADGE: Record<string, string> = {
-  ACTIVE: "bg-blue-100 text-blue-700",
-  WON: "bg-emerald-100 text-emerald-700",
-  LOST: "bg-red-100 text-red-700",
-};
-
 const STATUS_LABEL: Record<string, string> = {
   ACTIVE: "Activo",
   WON: "Convertido",
@@ -658,17 +652,6 @@ export function ProspectDetailDrawer({
         </DialogContent>
       </Dialog>
     </Sheet>
-  );
-}
-
-function DataRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="text-[10px] font-semibold text-theme-muted uppercase tracking-wide mb-0.5">
-        {label}
-      </p>
-      <p className="text-xs text-theme-secondary">{value}</p>
-    </div>
   );
 }
 

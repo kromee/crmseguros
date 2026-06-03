@@ -2,7 +2,7 @@
  * Espera a que MySQL en Docker acepte conexiones.
  * Uso: npm run db:wait
  */
-const net = require("net");
+import net from "node:net";
 
 const host = process.env.DATABASE_HOST || "localhost";
 const port = Number(process.env.DATABASE_PORT || 3306);
