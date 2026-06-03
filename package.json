@@ -24,7 +24,7 @@
     "backup": "bash scripts/backup.sh",
     "db:studio": "prisma studio",
     "db:setup": "npm run db:up && npm run db:wait && npm run db:migrate && npm run db:seed",
-    "db:wait": "node scripts/wait-for-mysql.js",
+    "db:wait": "node scripts/wait-for-mysql.mjs",
     "propuesta:pdf": "node scripts/generate-propuesta-pdf.mjs"
   },
   "prisma": {

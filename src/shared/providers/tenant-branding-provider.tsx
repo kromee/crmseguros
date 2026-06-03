@@ -2,7 +2,7 @@
 
 import { createContext, useContext } from "react";
 import type { TenantBranding } from "@/core/tenant/branding-types";
-import { DEFAULT_TENANT_SLOGAN } from "@/core/tenant/branding-types";
+import { DEFAULT_TENANT_SLOGAN, formatDisplaySlogan } from "@/core/tenant/branding-types";
 
 const TenantBrandingContext = createContext<TenantBranding | null>(null);
 
@@ -33,5 +33,5 @@ export function useTenantBranding(): TenantBranding {
 
 export function useTenantDisplaySlogan(): string {
   const { slogan } = useTenantBranding();
-  return slogan?.trim() || DEFAULT_TENANT_SLOGAN;
+  return formatDisplaySlogan(slogan);
 }

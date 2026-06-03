@@ -64,7 +64,7 @@ export function PaymentsList({
   function handleDelete(paymentId: string) {
     if (!confirm("¿Eliminar este pago?")) return;
     startTransition(async () => {
-      const result = await deletePaymentAction(paymentId, policyId);
+      const result = await deletePaymentAction(paymentId);
       if (result.ok) {
         toast.success("Pago eliminado");
         router.refresh();

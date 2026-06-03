@@ -13,7 +13,7 @@ export async function uniqueTenantSlug(
   base: string,
   exists: (slug: string) => Promise<boolean>
 ): Promise<string> {
-  let slug = slugify(base) || "agencia";
+  const slug = slugify(base) || "agencia";
   if (!(await exists(slug))) return slug;
 
   for (let i = 2; i < 100; i++) {

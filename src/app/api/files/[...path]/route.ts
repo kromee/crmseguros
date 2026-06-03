@@ -2,7 +2,7 @@ import { existsSync } from "fs";
 import { readFile } from "fs/promises";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { canAccessTenantFile } from "@/infrastructure/storage/file-access";
+import { canAccessTenantFile, isPublicBrandingAsset } from "@/infrastructure/storage/file-access";
 import { getAbsolutePath } from "@/infrastructure/storage/local-storage";
 
 const MIME_MAP: Record<string, string> = {
@@ -18,10 +18,6 @@ export async function GET(
   { params }: { params: Promise<{ path: string[] }> }
 ) {
   const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-  }
-
   const { path: segments } = await params;
   const relativePath = segments.join("/");
 
@@ -29,7 +25,14 @@ export async function GET(
     return NextResponse.json({ error: "Ruta inválida" }, { status: 400 });
   }
 
+  const isPublicLogo = isPublicBrandingAsset(relativePath);
+
+  if (!session?.user && !isPublicLogo) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+
   if (
+    session?.user &&
     !canAccessTenantFile(
       relativePath,
       session.user.tenantId,
@@ -54,7 +57,7 @@ export async function GET(
     headers: {
       "Content-Type": contentType,
       "Content-Disposition": `inline; filename="${relativePath.split("/").pop()}"`,
-      "Cache-Control": "private, max-age=3600",
+      "Cache-Control": isPublicLogo ? "public, max-age=3600" : "private, max-age=3600",
     },
   });
 }

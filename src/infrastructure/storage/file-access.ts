@@ -1,5 +1,10 @@
 const UUID_SEGMENT = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/** Logos de agencia visibles en login (sin autenticación) */
+export function isPublicBrandingAsset(relativePath: string): boolean {
+  return /\/branding\/[^/]+\.(png|jpe?g|webp)$/i.test(relativePath);
+}
+
 /**
  * Tenant users solo acceden a archivos bajo su carpeta {tenantId}/...
  * o rutas legacy sin prefijo de tenant (contacts/..., policies/...).

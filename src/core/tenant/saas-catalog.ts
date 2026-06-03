@@ -120,4 +120,12 @@ export function formatPlanLabel(plan: {
 }
 
 /** @deprecated Usar SAAS_PLAN_CATALOG */
-export const SAAS_PLANS = SAAS_PLAN_CATALOG.map(({ id, description, sortOrder, ...rest }) => rest);
+export const SAAS_PLANS = SAAS_PLAN_CATALOG.map(
+  ({ slug, name, maxUsers, storageLimitMb, priceMonthly }) => ({
+    slug,
+    name,
+    maxUsers,
+    storageLimitMb,
+    priceMonthly,
+  })
+);

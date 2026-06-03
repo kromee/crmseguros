@@ -2,7 +2,6 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  CalendarDays,
   CreditCard,
   FileText,
   PiggyBank,

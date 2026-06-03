@@ -1,4 +1,11 @@
-export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME ?? "Seguros Mexa";
+/** Marca genérica del producto (login, marketing, sin tenant) */
+export const PRODUCT_NAME = process.env.NEXT_PUBLIC_PRODUCT_NAME ?? "Seguros CRM";
+export const PRODUCT_TAGLINE =
+  process.env.NEXT_PUBLIC_PRODUCT_TAGLINE ??
+  "Gestión profesional para agentes de seguros";
+
+/** @deprecated Preferir PRODUCT_NAME en pantallas públicas */
+export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME ?? PRODUCT_NAME;
 export const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
 export const CONTACT_ORIGINS = [

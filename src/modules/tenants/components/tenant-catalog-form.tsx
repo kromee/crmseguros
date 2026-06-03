@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { BookOpen, ChevronRight, Loader2, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
@@ -28,13 +28,17 @@ export function TenantCatalogForm({
   const [origins, setOrigins] = useState(catalog.contactOrigins);
   const [newInsurer, setNewInsurer] = useState("");
 
-  useEffect(() => {
-    if (!open) {
-      setInsurers(catalog.insurers);
-      setOrigins(catalog.contactOrigins);
-      setNewInsurer("");
-    }
-  }, [catalog, open]);
+  function resetForm() {
+    setInsurers(catalog.insurers);
+    setOrigins(catalog.contactOrigins);
+    setNewInsurer("");
+  }
+
+  function handleOpenChange(next: boolean) {
+    if (next) resetForm();
+    setOpen(next);
+    if (!next) resetForm();
+  }
 
   const activeOrigins = catalog.contactOrigins.filter((o) => o.enabled).length;
 
@@ -61,14 +65,14 @@ export function TenantCatalogForm({
         return;
       }
       toast.success("Catálogos guardados");
-      setOpen(false);
+      handleOpenChange(false);
       router.refresh();
     });
   }
 
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className={triggerClass}>
+      <button type="button" onClick={() => handleOpenChange(true)} className={triggerClass}>
         <BookOpen className="w-4 h-4 text-blue-600 flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-theme-primary truncate">Catálogos</p>
@@ -79,7 +83,7 @@ export function TenantCatalogForm({
         <ChevronRight className="w-4 h-4 text-theme-muted group-hover:text-blue-600 transition-colors flex-shrink-0" />
       </button>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent
           className="sm:max-w-[560px] p-0 gap-0 max-h-[90vh] overflow-hidden flex flex-col"
           showCloseButton={false}
@@ -99,7 +103,7 @@ export function TenantCatalogForm({
               </div>
               <button
                 type="button"
-                onClick={() => setOpen(false)}
+                onClick={() => handleOpenChange(false)}
                 className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/15 hover:bg-white/25 text-white"
                 aria-label="Cerrar"
               >
@@ -189,7 +193,7 @@ export function TenantCatalogForm({
           </div>
 
           <div className="flex-shrink-0 flex items-center justify-end gap-2 border-t border-theme-subtle px-6 py-4 bg-[var(--color-bg-input)]/60">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
               Cancelar
             </Button>
             <Button

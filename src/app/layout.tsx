@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { PRODUCT_NAME, PRODUCT_TAGLINE } from "@/core/constants";
 import { ThemeProvider } from "@/shared/providers/theme-provider";
 import "./globals.css";
 
@@ -9,8 +10,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Seguros Mexa CRM",
-  description: "CRM Corporativo para agente de seguros — Innovando tu seguridad, protegiendo tu mañana.",
+  title: PRODUCT_NAME,
+  description: PRODUCT_TAGLINE,
 };
 
 export default function RootLayout({

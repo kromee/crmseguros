@@ -107,7 +107,6 @@ export const dashboardService = {
     const in30 = addDays(now, 30);
 
     const [
-      activeClients,
       newClientsWeek,
       totalPoliciesActive,
       expiredNotRenewed,
@@ -118,7 +117,6 @@ export const dashboardService = {
       totalPaymentsMonth,
       pendingEvents,
     ] = await Promise.all([
-      prisma.contact.count({ where: { tenantId, type: "CLIENT", status: "ACTIVE" } }),
       prisma.contact.count({
         where: { tenantId, type: "CLIENT", status: "ACTIVE", createdAt: { gte: weekAgo } },
       }),
@@ -195,7 +193,6 @@ export const dashboardService = {
   async getAllAlerts(tenantId: string): Promise<DashboardAlert[]> {
     const now = new Date();
     const in3 = addDays(now, 3);
-    const in7 = addDays(now, 7);
     const in30 = addDays(now, 30);
     const daysAgo7 = addDays(now, -7);
     const daysAgo15 = addDays(now, -15);
