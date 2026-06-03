@@ -3,7 +3,7 @@ import { NotFoundError } from "@/core/errors/app-error";
 import type { TenantBranding } from "./branding-types";
 
 export type { TenantBranding } from "./branding-types";
-export { DEFAULT_TENANT_SLOGAN } from "./branding-types";
+export { DEFAULT_TENANT_SLOGAN, formatDisplaySlogan } from "./branding-types";
 
 const brandingSelect = {
   id: true,

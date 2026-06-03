@@ -188,7 +188,7 @@ export function TenantBrandingForm({
           >
             <div className="space-y-1.5">
               <Label htmlFor="name">Nombre comercial</Label>
-              <Input id="name" placeholder="Seguros Mexa" {...register("name")} />
+              <Input id="name" placeholder="Nombre de tu agencia" {...register("name")} />
               {errors.name && <p className="text-xs text-red-600">{errors.name.message}</p>}
             </div>
 

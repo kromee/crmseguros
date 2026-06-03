@@ -7,3 +7,7 @@ export type TenantBranding = {
 };
 
 export const DEFAULT_TENANT_SLOGAN = "CRM Corporativo";
+
+export function formatDisplaySlogan(slogan: string | null | undefined): string {
+  return slogan?.trim() || DEFAULT_TENANT_SLOGAN;
+}

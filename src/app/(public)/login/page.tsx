@@ -1,8 +1,9 @@
 import { Suspense } from "react";
+import { PRODUCT_NAME } from "@/core/constants";
 import { LoginForm } from "./_components/login-form";
 
 export const metadata = {
-  title: "Iniciar sesión — Seguros Mexa",
+  title: `Iniciar sesión — ${PRODUCT_NAME}`,
 };
 
 export default function LoginPage() {

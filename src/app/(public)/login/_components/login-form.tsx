@@ -6,11 +6,12 @@ import { signIn, getSession } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
-import { Shield, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { loginSchema, type LoginInput } from "@/modules/auth/schemas/login.schema";
+import { LoginBrandingHeader } from "./login-branding-header";
 
 export function LoginForm() {
   const router = useRouter();
@@ -58,13 +59,7 @@ export function LoginForm() {
 
   return (
     <div className="w-full max-w-md">
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-blue-600 mb-4">
-          <Shield className="w-7 h-7 text-white" />
-        </div>
-        <h1 className="text-2xl font-bold text-theme-primary">Seguros Mexa</h1>
-        <p className="text-sm text-theme-muted mt-1">CRM Corporativo</p>
-      </div>
+      <LoginBrandingHeader />
 
       <div className="crm-card p-8">
         <h2 className="text-lg font-semibold text-theme-primary mb-1">Iniciar sesión</h2>
@@ -77,7 +72,7 @@ export function LoginForm() {
               id="email"
               type="email"
               autoComplete="email"
-              placeholder="admin@segurosmexa.com"
+              placeholder="tu@agencia.com"
               {...register("email")}
             />
             {errors.email && (
@@ -127,15 +122,7 @@ export function LoginForm() {
             Activar agencia
           </Link>
         </p>
-
-        <p className="text-xs text-theme-muted text-center mt-4">
-          Demo: admin@segurosmexa.com / Admin123!
-        </p>
       </div>
-
-      <p className="text-center text-xs text-theme-muted mt-6">
-        Innovando tu seguridad, protegiendo tu mañana.
-      </p>
     </div>
   );
 }
