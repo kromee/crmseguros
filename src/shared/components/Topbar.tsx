@@ -1,11 +1,10 @@
 "use client";
 
-import { Bell, LogOut, Moon, Sun } from "lucide-react";
+import { LogOut, Moon, Sun, User } from "lucide-react";
 import { signOut } from "next-auth/react";
 import type { Session } from "next-auth";
 import { useTheme } from "next-themes";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,60 +12,59 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { isTenantAdmin } from "@/core/tenant/roles";
 import { getInitials } from "@/core/utils/format";
+import { useProfileDialog } from "@/shared/providers/profile-dialog-provider";
+import { TopbarNotifications } from "@/shared/components/topbar-notifications";
+
+function avatarSrc(image: string | null | undefined) {
+  if (!image) return undefined;
+  if (image.startsWith("/") || image.startsWith("http")) return image;
+  return `/api/files/${image}`;
+}
 
 interface TopbarProps {
   user: Session["user"];
-  placeholder?: string;
+  notificationBadgeCount?: number;
 }
 
-export function Topbar({ user, placeholder = "Buscar datos..." }: TopbarProps) {
+export function Topbar({ user, notificationBadgeCount = 0 }: TopbarProps) {
   const { theme, setTheme } = useTheme();
+  const { openProfile } = useProfileDialog();
   const displayName = user.name ?? "Usuario";
-  const displayTitle = user.title ?? (user.role === "ADMIN" ? "Administrador" : "Agente");
+  const displayTitle = user.title ?? (isTenantAdmin(user.role) ? "Administrador" : "Agente");
   const isDark = theme === "dark";
+  const photoSrc = avatarSrc(user.image);
 
   return (
     <header className="crm-topbar">
-      <div className="relative flex-1 max-w-md">
-        <Input
-          placeholder={placeholder}
-          className="h-9 bg-slate-50 border-slate-200 text-sm"
-        />
-      </div>
-
       <div className="flex items-center gap-2 ml-auto">
-        <button
-          type="button"
-          className="relative p-2 rounded-lg hover:bg-slate-100 transition-colors"
-          aria-label="Notificaciones"
-        >
-          <Bell className="w-4 h-4 text-slate-500" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
-        </button>
+        {user.tenantId ? (
+          <TopbarNotifications initialBadgeCount={notificationBadgeCount} />
+        ) : null}
 
         <button
           type="button"
-          className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
+          className="p-2 rounded-lg hover:bg-[var(--color-bg-hover)] transition-colors"
           aria-label="Cambiar tema"
           onClick={() => setTheme(isDark ? "light" : "dark")}
           title={isDark ? "Cambiar a claro" : "Cambiar a oscuro"}
         >
           {isDark ? (
-            <Sun className="w-4 h-4 text-slate-500" />
+            <Sun className="w-4 h-4 text-theme-muted" />
           ) : (
-            <Moon className="w-4 h-4 text-slate-500" />
+            <Moon className="w-4 h-4 text-theme-muted" />
           )}
         </button>
 
         <DropdownMenu>
-          <DropdownMenuTrigger className="flex items-center gap-2 pl-2 border-l border-slate-200 outline-none cursor-pointer">
+          <DropdownMenuTrigger className="flex items-center gap-2 pl-2 border-l border-theme outline-none cursor-pointer">
             <div className="hidden sm:block text-right">
-              <p className="text-xs font-semibold text-slate-800">{displayName}</p>
-              <p className="text-xs text-slate-400">{displayTitle}</p>
+              <p className="text-xs font-semibold text-theme-primary">{displayName}</p>
+              <p className="text-xs text-theme-muted">{displayTitle}</p>
             </div>
             <Avatar className="w-8 h-8">
-              {user.image && <AvatarImage src={user.image} alt={displayName} />}
+              {photoSrc && <AvatarImage src={photoSrc} alt={displayName} />}
               <AvatarFallback className="bg-blue-600 text-white text-xs font-semibold">
                 {getInitials(displayName)}
               </AvatarFallback>
@@ -74,12 +72,21 @@ export function Topbar({ user, placeholder = "Buscar datos..." }: TopbarProps) {
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="end"
-            className="w-56 bg-white text-slate-800 border border-slate-200 shadow-xl"
+            className="w-56 bg-[var(--color-bg-card)] text-[var(--color-text-primary)] border border-[var(--color-border)] shadow-xl"
           >
-            <div className="px-2 py-1.5 bg-white">
-              <p className="font-medium text-sm text-slate-800">{displayName}</p>
-              <p className="text-xs text-slate-500 font-normal">{user.email}</p>
+            <div className="px-2 py-1.5">
+              <p className="font-medium text-sm text-theme-primary">{displayName}</p>
+              <p className="text-xs text-theme-muted font-normal">{user.email}</p>
             </div>
+            {user.tenantId && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="cursor-pointer" onClick={openProfile}>
+                  <User className="w-4 h-4 mr-2" />
+                  Mi perfil
+                </DropdownMenuItem>
+              </>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-red-600 focus:text-red-600 cursor-pointer"

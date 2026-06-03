@@ -90,7 +90,7 @@ const ACTIVITY_COLOR: Record<string, string> = {
   LLAMADA: "text-blue-600 bg-blue-50",
   EMAIL: "text-purple-600 bg-purple-50",
   WHATSAPP: "text-green-600 bg-green-50",
-  NOTA: "text-slate-600 bg-slate-50",
+  NOTA: "text-theme-secondary bg-[var(--color-bg-input)]",
   VISITA: "text-amber-600 bg-amber-50",
   DOCUMENTO: "text-indigo-600 bg-indigo-50",
 };
@@ -246,7 +246,7 @@ export function ProspectDetailDrawer({
   return (
     <Sheet open={!!prospect} onOpenChange={(o) => !o && onClose()}>
       <SheetContent
-        className="w-full sm:max-w-md p-0 overflow-y-auto bg-white"
+        className="w-full sm:max-w-md p-0 overflow-y-auto bg-[var(--color-bg-card)]"
         showCloseButton={false}
       >
         {/* Header con gradiente */}
@@ -307,48 +307,48 @@ export function ProspectDetailDrawer({
         <div className="p-5 space-y-5">
           {/* KPIs del prospecto */}
           <div className="grid grid-cols-3 gap-2">
-            <div className="bg-slate-50 rounded-xl p-3 text-center border border-slate-100">
-              <p className="text-lg font-bold text-slate-800">
+            <div className="bg-[var(--color-bg-input)] rounded-xl p-3 text-center border border-theme-subtle">
+              <p className="text-lg font-bold text-theme-primary">
                 {prospect.probability}%
               </p>
-              <p className="text-[10px] text-slate-400 font-medium">Probabilidad</p>
+              <p className="text-[10px] text-theme-muted font-medium">Probabilidad</p>
             </div>
-            <div className="bg-slate-50 rounded-xl p-3 text-center border border-slate-100">
-              <p className="text-lg font-bold text-slate-800">
+            <div className="bg-[var(--color-bg-input)] rounded-xl p-3 text-center border border-theme-subtle">
+              <p className="text-lg font-bold text-theme-primary">
                 {prospect.estimatedValue
                   ? formatCurrency(prospect.estimatedValue)
                   : "—"}
               </p>
-              <p className="text-[10px] text-slate-400 font-medium">Valor est.</p>
+              <p className="text-[10px] text-theme-muted font-medium">Valor est.</p>
             </div>
-            <div className="bg-slate-50 rounded-xl p-3 text-center border border-slate-100">
+            <div className="bg-[var(--color-bg-input)] rounded-xl p-3 text-center border border-theme-subtle">
               <p className="text-base text-amber-500 leading-tight mt-0.5">
                 {"★".repeat(prospect.rating)}
-                <span className="text-slate-200">
+                <span className="text-theme-muted/40">
                   {"★".repeat(5 - prospect.rating)}
                 </span>
               </p>
-              <p className="text-[10px] text-slate-400 font-medium mt-0.5">Calificación</p>
+              <p className="text-[10px] text-theme-muted font-medium mt-0.5">Calificación</p>
             </div>
           </div>
 
           {/* Info del prospecto */}
-          <div className="rounded-xl border border-slate-100 divide-y divide-slate-100">
+          <div className="rounded-xl border border-theme-subtle divide-y divide-[var(--color-border-subtle)]">
             <div className="flex items-center justify-between px-4 py-2.5">
-              <span className="text-xs text-slate-500">Servicio</span>
-              <span className="text-xs font-semibold text-slate-800">
+              <span className="text-xs text-theme-muted">Servicio</span>
+              <span className="text-xs font-semibold text-theme-primary">
                 {prospect.serviceOfInterest ?? "Sin definir"}
               </span>
             </div>
             <div className="flex items-center justify-between px-4 py-2.5">
-              <span className="text-xs text-slate-500">Asignado a</span>
-              <span className="text-xs font-semibold text-slate-800">
+              <span className="text-xs text-theme-muted">Asignado a</span>
+              <span className="text-xs font-semibold text-theme-primary">
                 {prospect.assignedUser?.name ?? "Sin asignar"}
               </span>
             </div>
             <div className="flex items-center justify-between px-4 py-2.5">
-              <span className="text-xs text-slate-500">Creado</span>
-              <span className="text-xs font-semibold text-slate-800">
+              <span className="text-xs text-theme-muted">Creado</span>
+              <span className="text-xs font-semibold text-theme-primary">
                 {new Date(prospect.createdAt).toLocaleDateString("es-MX", {
                   day: "2-digit",
                   month: "short",
@@ -362,8 +362,8 @@ export function ProspectDetailDrawer({
           <NextActionCard nextEvent={nextEvent} contactId={prospect.contactId} />
 
           {prospect.notes && (
-            <div className="rounded-xl bg-slate-50 border border-slate-100 p-3.5 text-xs text-slate-600 whitespace-pre-wrap">
-              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-1.5">
+            <div className="rounded-xl bg-[var(--color-bg-input)] border border-theme-subtle p-3.5 text-xs text-theme-secondary whitespace-pre-wrap">
+              <p className="text-[10px] font-semibold text-theme-muted uppercase tracking-wide mb-1.5">
                 Notas
               </p>
               {prospect.notes}
@@ -373,7 +373,7 @@ export function ProspectDetailDrawer({
           {/* Bitácora reciente */}
           <div>
             <div className="flex items-center justify-between mb-2.5">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide flex items-center gap-1.5">
+              <p className="text-xs font-semibold text-theme-muted uppercase tracking-wide flex items-center gap-1.5">
                 <FileText className="w-3 h-3" />
                 Bitácora reciente
               </p>
@@ -384,7 +384,7 @@ export function ProspectDetailDrawer({
               />
             </div>
             {recentActivities.length === 0 ? (
-              <p className="text-xs text-slate-400 py-4 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
+              <p className="text-xs text-theme-muted py-4 text-center bg-[var(--color-bg-input)] rounded-xl border border-dashed border-theme">
                 Sin entradas todavía
               </p>
             ) : (
@@ -395,16 +395,16 @@ export function ProspectDetailDrawer({
                   return (
                     <div
                       key={act.id}
-                      className="flex gap-2.5 p-2.5 rounded-xl bg-slate-50 border border-slate-100 hover:border-slate-200 transition-colors"
+                      className="flex gap-2.5 p-2.5 rounded-xl bg-[var(--color-bg-input)] border border-theme-subtle hover:border-theme transition-colors"
                     >
                       <div className={`p-1.5 rounded-lg ${colorClass} h-fit`}>
                         <Icon className="w-3 h-3" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs text-slate-700 line-clamp-2">
+                        <p className="text-xs text-theme-secondary line-clamp-2">
                           {act.summary}
                         </p>
-                        <p className="text-[10px] text-slate-400 mt-0.5">
+                        <p className="text-[10px] text-theme-muted mt-0.5">
                           {timeAgo(act.createdAt)} · {act.performer?.name ?? "Sistema"}
                         </p>
                       </div>
@@ -418,7 +418,7 @@ export function ProspectDetailDrawer({
           {/* Etapas */}
           {!isClosed && (
             <div>
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2.5">
+              <p className="text-xs font-semibold text-theme-muted uppercase tracking-wide mb-2.5">
                 Mover a etapa
               </p>
               <div className="grid grid-cols-4 gap-1.5">
@@ -432,7 +432,7 @@ export function ProspectDetailDrawer({
                       className={`text-[11px] font-semibold py-2 px-1 rounded-lg border transition-all ${
                         active
                           ? "bg-blue-600 text-white border-blue-600 shadow-sm cursor-default"
-                          : "bg-white border-slate-200 text-slate-600 hover:border-blue-300 hover:bg-blue-50"
+                          : "bg-[var(--color-bg-card)] border-theme text-theme-secondary hover:border-blue-300 hover:bg-blue-50"
                       }`}
                     >
                       {s.label}
@@ -445,7 +445,7 @@ export function ProspectDetailDrawer({
 
           {/* Acciones principales */}
           {!isClosed && (
-            <div className="space-y-2 pt-3 border-t border-slate-100">
+            <div className="space-y-2 pt-3 border-t border-theme-subtle">
               <Button
                 onClick={() => setConfirmModal("convert")}
                 disabled={isPending}
@@ -466,9 +466,9 @@ export function ProspectDetailDrawer({
             </div>
           )}
 
-          <div className="pt-3 border-t border-slate-100 space-y-2">
+          <div className="pt-3 border-t border-theme-subtle space-y-2">
             <Link href={`/contacts/${prospect.contactId}`} className="block">
-              <Button variant="outline" className="w-full gap-2 text-sm border-slate-200 hover:border-blue-300">
+              <Button variant="outline" className="w-full gap-2 text-sm border-theme hover:border-blue-300">
                 <ExternalLink className="w-3.5 h-3.5" />
                 Ver ficha de contacto
               </Button>
@@ -477,7 +477,7 @@ export function ProspectDetailDrawer({
               href={`/contacts/${prospect.contactId}/interactions`}
               className="block"
             >
-              <Button variant="outline" className="w-full gap-2 text-sm border-slate-200 hover:border-blue-300">
+              <Button variant="outline" className="w-full gap-2 text-sm border-theme hover:border-blue-300">
                 <ArrowRightCircle className="w-3.5 h-3.5" />
                 Ver bitácora completa
               </Button>
@@ -523,17 +523,17 @@ export function ProspectDetailDrawer({
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-semibold text-slate-800">
+                  <p className="font-semibold text-theme-primary">
                     {prospect?.contact.fullName}
                   </p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-theme-muted">
                     {prospect?.contact.code} · {prospect?.serviceOfInterest ?? "Sin servicio"}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="space-y-2 text-sm text-slate-600">
+            <div className="space-y-2 text-sm text-theme-secondary">
               <div className="flex items-start gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 flex-shrink-0" />
                 <span>El contacto pasará de <strong>Prospecto</strong> a <strong>Cliente</strong></span>
@@ -549,11 +549,11 @@ export function ProspectDetailDrawer({
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-2 border-t border-slate-100 bg-slate-50/80 px-6 py-4">
+          <div className="flex items-center justify-end gap-2 border-t border-theme-subtle bg-[var(--color-bg-input)]/80 px-6 py-4">
             <Button
               variant="ghost"
               onClick={() => setConfirmModal(null)}
-              className="text-slate-500"
+              className="text-theme-muted"
             >
               Cancelar
             </Button>
@@ -588,17 +588,17 @@ export function ProspectDetailDrawer({
           </div>
 
           <div className="px-6 py-5">
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-theme-secondary">
               El prospecto se marcará como <strong>perdido</strong> y saldrá del pipeline activo. 
               El contacto seguirá disponible en el directorio.
             </p>
           </div>
 
-          <div className="flex items-center justify-end gap-2 border-t border-slate-100 bg-slate-50/80 px-6 py-4">
+          <div className="flex items-center justify-end gap-2 border-t border-theme-subtle bg-[var(--color-bg-input)]/80 px-6 py-4">
             <Button
               variant="ghost"
               onClick={() => setConfirmModal(null)}
-              className="text-slate-500"
+              className="text-theme-muted"
             >
               Cancelar
             </Button>
@@ -633,17 +633,17 @@ export function ProspectDetailDrawer({
           </div>
 
           <div className="px-6 py-5">
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-theme-secondary">
               Esta acción es <strong>permanente</strong> y no se puede deshacer.
               Se eliminará el prospecto del pipeline pero el contacto se mantendrá.
             </p>
           </div>
 
-          <div className="flex items-center justify-end gap-2 border-t border-slate-100 bg-slate-50/80 px-6 py-4">
+          <div className="flex items-center justify-end gap-2 border-t border-theme-subtle bg-[var(--color-bg-input)]/80 px-6 py-4">
             <Button
               variant="ghost"
               onClick={() => setConfirmModal(null)}
-              className="text-slate-500"
+              className="text-theme-muted"
             >
               Cancelar
             </Button>
@@ -664,10 +664,10 @@ export function ProspectDetailDrawer({
 function DataRow({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-0.5">
+      <p className="text-[10px] font-semibold text-theme-muted uppercase tracking-wide mb-0.5">
         {label}
       </p>
-      <p className="text-xs text-slate-700">{value}</p>
+      <p className="text-xs text-theme-secondary">{value}</p>
     </div>
   );
 }
@@ -681,10 +681,10 @@ function NextActionCard({
 }) {
   if (!nextEvent) {
     return (
-      <div className="rounded-xl border border-dashed border-slate-200 p-4 text-center">
-        <Sparkles className="w-5 h-5 text-slate-300 mx-auto mb-1.5" />
-        <p className="text-xs text-slate-500 font-medium">Sin próxima acción programada</p>
-        <p className="text-[11px] text-slate-400 mt-0.5 mb-3">
+      <div className="rounded-xl border border-dashed border-theme p-4 text-center">
+        <Sparkles className="w-5 h-5 text-theme-muted/50 mx-auto mb-1.5" />
+        <p className="text-xs text-theme-muted font-medium">Sin próxima acción programada</p>
+        <p className="text-[11px] text-theme-muted mt-0.5 mb-3">
           Programa un evento en el calendario para dar seguimiento a este prospecto.
         </p>
         <Link

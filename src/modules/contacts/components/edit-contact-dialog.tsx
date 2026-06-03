@@ -13,9 +13,10 @@ import type { CreateContactInput } from "../schemas/contact.schema";
 interface Props {
   contactId: string;
   defaultValues: Partial<CreateContactInput>;
+  contactOrigins: ReadonlyArray<{ value: string; label: string }>;
 }
 
-export function EditContactDialog({ contactId, defaultValues }: Props) {
+export function EditContactDialog({ contactId, defaultValues, contactOrigins }: Props) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -65,6 +66,7 @@ export function EditContactDialog({ contactId, defaultValues }: Props) {
               mode="edit"
               contactId={contactId}
               defaultValues={defaultValues}
+              contactOrigins={contactOrigins}
             />
           </div>
         </DialogContent>

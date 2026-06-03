@@ -59,9 +59,9 @@ export function PolicyFileUpload({ policyId, policyFile, readOnly = false }: Pro
   if (readOnly) {
     if (policyFile) {
       return (
-        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-slate-50 border border-slate-200">
-          <FileText className="w-4 h-4 text-slate-500 flex-shrink-0" />
-          <span className="text-xs text-slate-600 font-medium flex-1 truncate">
+        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-[var(--color-bg-input)] border border-theme">
+          <FileText className="w-4 h-4 text-theme-muted flex-shrink-0" />
+          <span className="text-xs text-theme-secondary font-medium flex-1 truncate">
             Póliza adjunta (solo lectura)
           </span>
           <a
@@ -77,7 +77,7 @@ export function PolicyFileUpload({ policyId, policyFile, readOnly = false }: Pro
       );
     }
     return (
-      <p className="flex items-center gap-2 text-xs text-slate-400 p-2.5 rounded-lg bg-slate-50 border border-slate-100">
+      <p className="flex items-center gap-2 text-xs text-theme-muted p-2.5 rounded-lg bg-[var(--color-bg-input)] border border-theme-subtle">
         <Lock className="w-3.5 h-3.5 flex-shrink-0" />
         Póliza vencida: no se pueden adjuntar archivos.
       </p>
@@ -123,7 +123,7 @@ export function PolicyFileUpload({ policyId, policyFile, readOnly = false }: Pro
       <button
         onClick={() => inputRef.current?.click()}
         disabled={isPending}
-        className="w-full flex items-center justify-center gap-2 p-2.5 rounded-lg border border-dashed border-slate-300 bg-slate-50 text-xs text-slate-500 hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600 transition-all cursor-pointer"
+        className="w-full flex items-center justify-center gap-2 p-2.5 rounded-lg border border-dashed border-theme bg-[var(--color-bg-input)] text-xs text-theme-muted hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600 transition-all cursor-pointer"
       >
         <FileUp className="w-4 h-4" />
         {isPending ? "Subiendo..." : "Adjuntar archivo de póliza (PDF, imagen)"}

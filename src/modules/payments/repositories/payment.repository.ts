@@ -6,9 +6,9 @@ import type {
 } from "../schemas/payment.schema";
 
 export const paymentRepository = {
-  async findById(id: string) {
-    return prisma.payment.findUnique({
-      where: { id },
+  async findById(tenantId: string, id: string) {
+    return prisma.payment.findFirst({
+      where: { id, tenantId },
       include: {
         policy: {
           select: {
@@ -23,21 +23,21 @@ export const paymentRepository = {
     });
   },
 
-  async listByPolicy(policyId: string) {
+  async listByPolicy(tenantId: string, policyId: string) {
     return prisma.payment.findMany({
-      where: { policyId },
+      where: { tenantId, policyId },
       orderBy: { paymentDate: "desc" },
     });
   },
 
-  async list(filters: PaymentFilters) {
-    const where: Prisma.PaymentWhereInput = {};
+  async list(tenantId: string, filters: PaymentFilters) {
+    const where: Prisma.PaymentWhereInput = { tenantId };
 
     if (filters.policyId) where.policyId = filters.policyId;
     if (filters.status) where.status = filters.status;
 
     if (filters.contactId) {
-      where.policy = { contactId: filters.contactId };
+      where.policy = { contactId: filters.contactId, tenantId };
     }
 
     if (filters.dateFrom || filters.dateTo) {
@@ -80,9 +80,10 @@ export const paymentRepository = {
     };
   },
 
-  async create(input: CreatePaymentInput) {
+  async create(tenantId: string, input: CreatePaymentInput) {
     return prisma.payment.create({
       data: {
+        tenantId,
         policyId: input.policyId,
         amount: input.amount,
         paymentDate: input.paymentDate,
@@ -96,13 +97,13 @@ export const paymentRepository = {
     });
   },
 
-  async delete(id: string) {
-    return prisma.payment.delete({ where: { id } });
+  async delete(tenantId: string, id: string) {
+    return prisma.payment.delete({ where: { id, tenantId } });
   },
 
-  async sumByPolicy(policyId: string) {
+  async sumByPolicy(tenantId: string, policyId: string) {
     const result = await prisma.payment.aggregate({
-      where: { policyId, status: "CONFIRMED" },
+      where: { tenantId, policyId, status: "CONFIRMED" },
       _sum: { amount: true },
       _count: { _all: true },
     });
@@ -112,7 +113,7 @@ export const paymentRepository = {
     };
   },
 
-  async annualSummary(year: number) {
+  async annualSummary(tenantId: string, year: number) {
     const start = new Date(`${year}-01-01`);
     const end = new Date(`${year}-12-31`);
 
@@ -124,7 +125,8 @@ export const paymentRepository = {
         CAST(SUM(amount) AS CHAR) as total,
         COUNT(*) as count
       FROM payments
-      WHERE status = 'CONFIRMED'
+      WHERE tenantId = ${tenantId}
+        AND status = 'CONFIRMED'
         AND paymentDate >= ${start}
         AND paymentDate <= ${end}
       GROUP BY MONTH(paymentDate)
@@ -138,7 +140,7 @@ export const paymentRepository = {
     }));
   },
 
-  async totalPremiumsAnnual(year: number) {
+  async totalPremiumsAnnual(tenantId: string, year: number) {
     const result = await prisma.$queryRaw<
       Array<{ type: string; total_premium: string; count: bigint }>
     >`
@@ -147,7 +149,8 @@ export const paymentRepository = {
         CAST(SUM(premium) AS CHAR) as total_premium,
         COUNT(*) as count
       FROM policies
-      WHERE status = 'ACTIVE'
+      WHERE tenantId = ${tenantId}
+        AND status = 'ACTIVE'
         AND YEAR(startDate) <= ${year}
         AND YEAR(endDate) >= ${year}
       GROUP BY type

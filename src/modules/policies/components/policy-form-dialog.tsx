@@ -11,7 +11,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,7 @@ import {
   renewPolicyAction,
   updatePolicyAction,
 } from "@/modules/policies/actions/policy.actions";
+import { getTenantCatalogAction } from "@/modules/tenants/actions/tenant-catalog.actions";
 import { PolicyFileUpload } from "./policy-file-upload";
 import { PolicyVehiclePhotoUpload } from "./policy-vehicle-photo-upload";
 import {
@@ -53,6 +54,7 @@ interface Props {
   defaultValues?: Partial<FormValues>;
   policyFile?: string | null;
   vehiclePhoto?: string | null;
+  insurers?: readonly string[];
   filesReadOnly?: boolean;
 }
 
@@ -85,9 +87,9 @@ const TYPE_CONFIG = {
   OTRO: {
     icon: FileText,
     gradient: "from-slate-500 to-slate-700",
-    lightBg: "bg-slate-50",
-    lightText: "text-slate-700",
-    lightBorder: "border-slate-200",
+    lightBg: "bg-[var(--color-bg-input)]",
+    lightText: "text-theme-secondary",
+    lightBorder: "border-theme",
     ring: "ring-slate-500/20",
     label: "Otro",
   },
@@ -107,10 +109,10 @@ function SectionTitle({
 }) {
   return (
     <div className="flex items-center gap-2 pb-2">
-      <div className="flex items-center justify-center w-6 h-6 rounded-md bg-slate-100">
-        <Icon className="w-3.5 h-3.5 text-slate-500" />
+      <div className="flex items-center justify-center w-6 h-6 rounded-md bg-[var(--color-bg-elevated)]">
+        <Icon className="w-3.5 h-3.5 text-theme-muted" />
       </div>
-      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+      <span className="text-xs font-semibold text-theme-muted uppercase tracking-wider">
         {children}
       </span>
     </div>
@@ -126,10 +128,13 @@ export function PolicyFormDialog({
   defaultValues,
   policyFile = null,
   vehiclePhoto = null,
+  insurers = INSURERS,
   filesReadOnly = false,
 }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [insurerOptions, setInsurerOptions] = useState<string[]>(() => [...insurers]);
+  const [loadingInsurers, setLoadingInsurers] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(policyBaseSchema) as never,
@@ -162,8 +167,34 @@ export function PolicyFormDialog({
   } = form;
 
   const selectedType = watch("type") as keyof typeof TYPE_CONFIG;
+  const selectedInsurer = watch("insurer");
   const config = TYPE_CONFIG[selectedType] ?? TYPE_CONFIG.OTRO;
   const Icon = config.icon;
+
+  const insurerList = useMemo(() => {
+    const names = new Set(insurerOptions);
+    if (selectedInsurer?.trim()) names.add(selectedInsurer.trim());
+    return Array.from(names);
+  }, [insurerOptions, selectedInsurer]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    let cancelled = false;
+    setLoadingInsurers(true);
+    void getTenantCatalogAction()
+      .then((catalog) => {
+        if (cancelled || catalog.insurers.length === 0) return;
+        setInsurerOptions(catalog.insurers);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingInsurers(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
 
   useEffect(() => {
     if (open) {
@@ -273,7 +304,7 @@ export function PolicyFormDialog({
                   onClick={() => setValue("type", t.value)}
                   className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
                     active
-                      ? "bg-white text-slate-800 shadow-md"
+                      ? "bg-[var(--color-bg-card)] text-theme-primary shadow-md"
                       : "bg-white/15 text-white/90 hover:bg-white/25 backdrop-blur-sm"
                   }`}
                 >
@@ -312,9 +343,12 @@ export function PolicyFormDialog({
                     id="insurer"
                     {...register("insurer")}
                     className="crm-select"
+                    disabled={loadingInsurers}
                   >
-                    <option value="">Seleccionar</option>
-                    {INSURERS.map((name) => (
+                    <option value="">
+                      {loadingInsurers ? "Cargando aseguradoras..." : "Seleccionar"}
+                    </option>
+                    {insurerList.map((name) => (
                       <option key={name} value={name}>
                         {name}
                       </option>
@@ -387,7 +421,7 @@ export function PolicyFormDialog({
                 <div>
                   <Label htmlFor="premium">Prima</Label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-medium">$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-theme-muted font-medium">$</span>
                     <Input
                       id="premium"
                       type="number"
@@ -444,7 +478,7 @@ export function PolicyFormDialog({
                   <div>
                     <Label htmlFor="sumInsured">Suma asegurada</Label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-medium">$</span>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-theme-muted font-medium">$</span>
                       <Input
                         id="sumInsured"
                         type="number"
@@ -519,7 +553,7 @@ export function PolicyFormDialog({
                   <div>
                     <Label htmlFor="sumInsured">Suma asegurada</Label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-medium">$</span>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-theme-muted font-medium">$</span>
                       <Input
                         id="sumInsured"
                         type="number"
@@ -547,12 +581,12 @@ export function PolicyFormDialog({
 
             {/* ─── Sección dinámica: OTRO ─── */}
             {selectedType === "OTRO" && (
-              <section className="space-y-3 p-4 rounded-xl bg-slate-50 border border-slate-200">
+              <section className="space-y-3 p-4 rounded-xl bg-[var(--color-bg-input)] border border-theme">
                 <div className="flex items-center gap-2 pb-1">
-                  <div className="flex items-center justify-center w-6 h-6 rounded-md bg-slate-100">
-                    <Sparkles className="w-3.5 h-3.5 text-slate-500" />
+                  <div className="flex items-center justify-center w-6 h-6 rounded-md bg-[var(--color-bg-elevated)]">
+                    <Sparkles className="w-3.5 h-3.5 text-theme-muted" />
                   </div>
-                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  <span className="text-xs font-semibold text-theme-muted uppercase tracking-wider">
                     Detalles del seguro
                   </span>
                 </div>
@@ -565,7 +599,7 @@ export function PolicyFormDialog({
                   <div>
                     <Label htmlFor="sumInsured">Suma asegurada</Label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-medium">$</span>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-theme-muted font-medium">$</span>
                       <Input
                         id="sumInsured"
                         type="number"
@@ -615,8 +649,8 @@ export function PolicyFormDialog({
           </div>
 
           {/* ─── Footer sticky ─── */}
-          <div className="flex-shrink-0 flex items-center justify-between gap-3 border-t border-slate-100 bg-slate-50/80 px-6 py-4">
-            <p className="text-[11px] text-slate-400 hidden sm:block">
+          <div className="flex-shrink-0 flex items-center justify-between gap-3 border-t border-theme-subtle bg-[var(--color-bg-input)]/80 px-6 py-4">
+            <p className="text-[11px] text-theme-muted hidden sm:block">
               Los campos marcados son obligatorios
             </p>
             <div className="flex gap-2 ml-auto">
@@ -624,7 +658,7 @@ export function PolicyFormDialog({
                 type="button"
                 variant="ghost"
                 onClick={() => onOpenChange(false)}
-                className="text-slate-500"
+                className="text-theme-muted"
               >
                 Cancelar
               </Button>

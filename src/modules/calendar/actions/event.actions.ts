@@ -1,8 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
 import { AppError } from "@/core/errors/app-error";
+import { requireTenantSession } from "@/core/tenant";
 import type { ActionResult } from "@/core/types/action-result";
 import {
   createEventSchema,
@@ -12,17 +12,11 @@ import {
 } from "../schemas/event.schema";
 import { eventService } from "../services/event.service";
 
-async function requireUser() {
-  const session = await auth();
-  if (!session?.user?.id) throw new AppError("No autorizado", 401);
-  return session.user;
-}
-
 export async function createEventAction(
   input: CreateEventInput
 ): Promise<ActionResult<{ id: string }>> {
   try {
-    const user = await requireUser();
+    const session = await requireTenantSession();
     const parsed = createEventSchema.safeParse(input);
     if (!parsed.success) {
       return {
@@ -31,7 +25,11 @@ export async function createEventAction(
         fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]>,
       };
     }
-    const created = await eventService.create(parsed.data, user.id);
+    const created = await eventService.create(
+      session.tenantId,
+      parsed.data,
+      session.userId
+    );
     revalidatePath("/calendar");
     revalidatePath("/dashboard");
     if (created.contactId) {
@@ -51,7 +49,7 @@ export async function updateEventAction(
   input: UpdateEventInput
 ): Promise<ActionResult> {
   try {
-    const user = await requireUser();
+    const session = await requireTenantSession();
     const parsed = updateEventSchema.safeParse(input);
     if (!parsed.success) {
       return {
@@ -60,7 +58,12 @@ export async function updateEventAction(
         fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]>,
       };
     }
-    const updated = await eventService.update(id, parsed.data, user.id);
+    const updated = await eventService.update(
+      session.tenantId,
+      id,
+      parsed.data,
+      session.userId
+    );
     revalidatePath("/calendar");
     revalidatePath("/dashboard");
     if (updated.contactId) revalidatePath(`/contacts/${updated.contactId}`);
@@ -75,8 +78,13 @@ export async function updateEventAction(
 
 export async function completeEventAction(id: string): Promise<ActionResult> {
   try {
-    const user = await requireUser();
-    await eventService.update(id, { status: "COMPLETED" }, user.id);
+    const session = await requireTenantSession();
+    await eventService.update(
+      session.tenantId,
+      id,
+      { status: "COMPLETED" },
+      session.userId
+    );
     revalidatePath("/calendar");
     revalidatePath("/dashboard");
     revalidatePath("/reminders");
@@ -91,8 +99,8 @@ export async function completeEventAction(id: string): Promise<ActionResult> {
 
 export async function deleteEventAction(id: string): Promise<ActionResult> {
   try {
-    const user = await requireUser();
-    await eventService.remove(id, user.id);
+    const session = await requireTenantSession();
+    await eventService.remove(session.tenantId, id, session.userId);
     revalidatePath("/calendar");
     revalidatePath("/dashboard");
     return { ok: true, data: null };

@@ -7,9 +7,9 @@ import type {
 } from "../schemas/prospect.schema";
 
 export const prospectRepository = {
-  async findById(id: string) {
-    return prisma.prospect.findUnique({
-      where: { id },
+  async findById(tenantId: string, id: string) {
+    return prisma.prospect.findFirst({
+      where: { id, tenantId },
       include: {
         contact: {
           select: {
@@ -33,12 +33,14 @@ export const prospectRepository = {
     });
   },
 
-  async findByCode(code: string) {
-    return prisma.prospect.findUnique({ where: { code } });
+  async findByCode(tenantId: string, code: string) {
+    return prisma.prospect.findUnique({
+      where: { tenantId_code: { tenantId, code } },
+    });
   },
 
-  async list(filters: ProspectsFilters) {
-    const where: Prisma.ProspectWhereInput = {};
+  async list(tenantId: string, filters: ProspectsFilters) {
+    const where: Prisma.ProspectWhereInput = { tenantId };
     if (filters.stage) where.stage = filters.stage;
     if (filters.status) where.status = filters.status;
     if (filters.priority) where.priority = filters.priority;
@@ -65,8 +67,11 @@ export const prospectRepository = {
     });
   },
 
-  async listByStage(filters: ProspectsFilters) {
-    const items = await this.list({ ...filters, status: filters.status ?? "ACTIVE" });
+  async listByStage(tenantId: string, filters: ProspectsFilters) {
+    const items = await this.list(tenantId, {
+      ...filters,
+      status: filters.status ?? "ACTIVE",
+    });
     const grouped: Record<string, typeof items> = {
       CONTACTO_INICIAL: [],
       SEGUIMIENTO: [],
@@ -79,10 +84,10 @@ export const prospectRepository = {
     return grouped;
   },
 
-  async countByStage() {
+  async countByStage(tenantId: string) {
     const rows = await prisma.prospect.groupBy({
       by: ["stage"],
-      where: { status: "ACTIVE" },
+      where: { tenantId, status: "ACTIVE" },
       _count: { _all: true },
       _sum: { estimatedValue: true },
     });
@@ -97,9 +102,10 @@ export const prospectRepository = {
     }, {});
   },
 
-  async create(input: CreateProspectInput, code: string) {
+  async create(tenantId: string, input: CreateProspectInput, code: string) {
     return prisma.prospect.create({
       data: {
+        tenantId,
         code,
         contactId: input.contactId,
         stage: input.stage,
@@ -117,9 +123,9 @@ export const prospectRepository = {
     });
   },
 
-  async update(id: string, input: UpdateProspectInput) {
+  async update(tenantId: string, id: string, input: UpdateProspectInput) {
     return prisma.prospect.update({
-      where: { id },
+      where: { id, tenantId },
       data: {
         ...(input.stage !== undefined && { stage: input.stage }),
         ...(input.priority !== undefined && { priority: input.priority }),
@@ -146,9 +152,9 @@ export const prospectRepository = {
     });
   },
 
-  async updateStage(id: string, stage: string) {
+  async updateStage(tenantId: string, id: string, stage: string) {
     return prisma.prospect.update({
-      where: { id },
+      where: { id, tenantId },
       data: {
         stage: stage as never,
         nextActionType: null,
@@ -157,12 +163,13 @@ export const prospectRepository = {
     });
   },
 
-  async delete(id: string) {
-    return prisma.prospect.delete({ where: { id } });
+  async delete(tenantId: string, id: string) {
+    return prisma.prospect.delete({ where: { id, tenantId } });
   },
 
-  async nextCodeNumber() {
+  async nextCodeNumber(tenantId: string) {
     const last = await prisma.prospect.findFirst({
+      where: { tenantId },
       orderBy: { createdAt: "desc" },
       select: { code: true },
     });

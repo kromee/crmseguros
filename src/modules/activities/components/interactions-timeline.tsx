@@ -65,9 +65,9 @@ const STYLE: Record<
   },
   NOTA: {
     icon: FileText,
-    color: "text-slate-600",
-    bg: "bg-slate-50",
-    border: "border-slate-100",
+    color: "text-theme-secondary",
+    bg: "bg-[var(--color-bg-input)]",
+    border: "border-theme-subtle",
   },
   VISITA: {
     icon: User,
@@ -86,7 +86,7 @@ const STYLE: Record<
 const RESULT_BADGE: Record<string, string> = {
   EXITOSO: "bg-emerald-100 text-emerald-700",
   PENDIENTE: "bg-amber-100 text-amber-700",
-  SIN_RESPUESTA: "bg-slate-100 text-slate-600",
+  SIN_RESPUESTA: "bg-[var(--color-bg-elevated)] text-theme-secondary",
   FINALIZADO: "bg-blue-100 text-blue-700",
 };
 
@@ -116,11 +116,11 @@ export function InteractionsTimeline({
   if (activities.length === 0) {
     return (
       <div className="crm-card p-12 text-center">
-        <CheckCircle2 className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-        <p className="text-sm text-slate-500">
+        <CheckCircle2 className="w-10 h-10 text-theme-muted/50 mx-auto mb-3" />
+        <p className="text-sm text-theme-muted">
           Aún no hay entradas en la bitácora.
         </p>
-        <p className="text-xs text-slate-400 mt-1">
+        <p className="text-xs text-theme-muted mt-1">
           Usa &ldquo;Nueva entrada&rdquo; para registrar la primera interacción.
         </p>
       </div>
@@ -148,12 +148,12 @@ export function InteractionsTimeline({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-semibold text-slate-800">
+                      <span className="text-sm font-semibold text-theme-primary">
                         {typeLabel(act.type)}
                       </span>
                       <span
                         className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                          RESULT_BADGE[act.result] ?? "bg-slate-100 text-slate-600"
+                          RESULT_BADGE[act.result] ?? "bg-[var(--color-bg-elevated)] text-theme-secondary"
                         }`}
                       >
                         {resultLabel(act.result)}
@@ -163,7 +163,7 @@ export function InteractionsTimeline({
                       <div className="flex gap-1">
                         <button
                           onClick={() => setEditing(act)}
-                          className="p-1 hover:bg-slate-100 rounded text-slate-500"
+                          className="p-1 hover:bg-[var(--color-bg-hover)] rounded text-theme-muted"
                           title="Editar"
                         >
                           <Edit className="w-3.5 h-3.5" />
@@ -179,7 +179,7 @@ export function InteractionsTimeline({
                     )}
                   </div>
 
-                  <p className="text-sm text-slate-700 whitespace-pre-wrap">
+                  <p className="text-sm text-theme-secondary whitespace-pre-wrap">
                     {act.summary}
                   </p>
 
@@ -202,7 +202,7 @@ export function InteractionsTimeline({
                     </ul>
                   )}
 
-                  <p className="text-xs text-slate-400 mt-2">
+                  <p className="text-xs text-theme-muted mt-2">
                     {formatDateTime(act.createdAt)} · {timeAgo(act.createdAt)} ·{" "}
                     {act.performer?.name ?? "Sistema"}
                     {act.performer?.title ? ` (${act.performer.title})` : ""}

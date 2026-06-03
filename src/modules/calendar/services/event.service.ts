@@ -9,24 +9,30 @@ import type {
 } from "../schemas/event.schema";
 
 export const eventService = {
-  async list(filters: EventsFilters) {
-    return eventRepository.list(filters);
+  async list(tenantId: string, filters: EventsFilters) {
+    return eventRepository.list(tenantId, filters);
   },
 
-  async getById(id: string) {
-    const event = await eventRepository.findById(id);
+  async getById(tenantId: string, id: string) {
+    const event = await eventRepository.findById(tenantId, id);
     if (!event) throw new NotFoundError("Evento");
     return event;
   },
 
-  async upcomingByUser(userId: string, limit = 5) {
-    return eventRepository.upcomingByUser(userId, limit);
+  async upcomingByUser(tenantId: string, userId: string, limit = 5) {
+    return eventRepository.upcomingByUser(tenantId, userId, limit);
   },
 
-  async listMonth(userId: string | null, year: number, month: number, contactId?: string | null) {
+  async listMonth(
+    tenantId: string,
+    userId: string | null,
+    year: number,
+    month: number,
+    contactId?: string | null
+  ) {
     const start = new Date(year, month, 1);
     const end = new Date(year, month + 1, 1);
-    return eventRepository.list({
+    return eventRepository.list(tenantId, {
       userId: userId ?? undefined,
       contactId: contactId ?? undefined,
       rangeStart: start.toISOString(),
@@ -34,11 +40,16 @@ export const eventService = {
     });
   },
 
-  async create(input: CreateEventInput, currentUserId: string | null) {
-    const created = await eventRepository.create(input);
+  async create(
+    tenantId: string,
+    input: CreateEventInput,
+    currentUserId: string | null
+  ) {
+    const created = await eventRepository.create(tenantId, input);
     if (currentUserId) {
       await prisma.auditLog.create({
         data: {
+          tenantId,
           userId: currentUserId,
           entity: "calendar_events",
           entityId: created.id,
@@ -54,13 +65,19 @@ export const eventService = {
     return created;
   },
 
-  async update(id: string, input: UpdateEventInput, currentUserId: string | null) {
-    const existing = await eventRepository.findById(id);
+  async update(
+    tenantId: string,
+    id: string,
+    input: UpdateEventInput,
+    currentUserId: string | null
+  ) {
+    const existing = await eventRepository.findById(tenantId, id);
     if (!existing) throw new NotFoundError("Evento");
-    const updated = await eventRepository.update(id, input);
+    const updated = await eventRepository.update(tenantId, id, input);
     if (currentUserId) {
       await prisma.auditLog.create({
         data: {
+          tenantId,
           userId: currentUserId,
           entity: "calendar_events",
           entityId: id,
@@ -72,13 +89,14 @@ export const eventService = {
     return updated;
   },
 
-  async remove(id: string, currentUserId: string | null) {
-    const existing = await eventRepository.findById(id);
+  async remove(tenantId: string, id: string, currentUserId: string | null) {
+    const existing = await eventRepository.findById(tenantId, id);
     if (!existing) throw new NotFoundError("Evento");
-    await eventRepository.delete(id);
+    await eventRepository.delete(tenantId, id);
     if (currentUserId) {
       await prisma.auditLog.create({
         data: {
+          tenantId,
           userId: currentUserId,
           entity: "calendar_events",
           entityId: id,
@@ -89,20 +107,23 @@ export const eventService = {
     }
   },
 
-  async createRenewalReminder(params: {
-    policyId: string;
-    policyNumber: string;
-    contactId: string;
-    contactName: string;
-    endDate: Date;
-    userId: string;
-  }) {
+  async createRenewalReminder(
+    tenantId: string,
+    params: {
+      policyId: string;
+      policyNumber: string;
+      contactId: string;
+      contactName: string;
+      endDate: Date;
+      userId: string;
+    }
+  ) {
     const reminderDate = new Date(params.endDate);
     reminderDate.setDate(reminderDate.getDate() - 30);
     const endReminder = new Date(reminderDate);
     endReminder.setHours(endReminder.getHours() + 1);
 
-    return eventRepository.create({
+    return eventRepository.create(tenantId, {
       title: `Renovación de póliza ${params.policyNumber}`,
       type: "RENOVACION",
       contactId: params.contactId,

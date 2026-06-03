@@ -71,18 +71,42 @@ const MONTHS_ES = [
 const WEEKDAYS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 
 const TYPE_STYLE: Record<string, string> = {
-  RENOVACION: "bg-purple-100 text-purple-700 border-purple-200",
-  COBRO_PAGO: "bg-red-100 text-red-700 border-red-200",
-  SEGUIMIENTO: "bg-blue-100 text-blue-700 border-blue-200",
-  LLAMADA: "bg-indigo-100 text-indigo-700 border-indigo-200",
-  TAREA: "bg-amber-100 text-amber-700 border-amber-200",
+  RENOVACION:
+    "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-500/15 dark:text-purple-300 dark:border-purple-500/25",
+  COBRO_PAGO:
+    "bg-red-100 text-red-700 border-red-200 dark:bg-red-500/15 dark:text-red-300 dark:border-red-500/25",
+  SEGUIMIENTO:
+    "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/25",
+  LLAMADA:
+    "bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-500/15 dark:text-indigo-300 dark:border-indigo-500/25",
+  TAREA:
+    "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:border-amber-500/25",
+};
+
+const TYPE_ACCENT: Record<string, string> = {
+  RENOVACION: "border-l-purple-500",
+  COBRO_PAGO: "border-l-red-500",
+  SEGUIMIENTO: "border-l-blue-500",
+  LLAMADA: "border-l-indigo-500",
+  TAREA: "border-l-amber-500",
 };
 
 const URGENCY_STYLE: Record<string, string> = {
-  normal: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  warning: "bg-amber-50 text-amber-700 border-amber-300",
-  critical: "bg-red-50 text-red-700 border-red-300 font-bold",
-  expired: "bg-red-100 text-red-800 border-red-400 font-bold",
+  normal:
+    "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/25",
+  warning:
+    "bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/25",
+  critical:
+    "bg-red-50 text-red-700 border-red-300 font-bold dark:bg-red-500/10 dark:text-red-300 dark:border-red-500/30",
+  expired:
+    "bg-red-100 text-red-800 border-red-400 font-bold dark:bg-red-500/15 dark:text-red-300 dark:border-red-500/35",
+};
+
+const URGENCY_ACCENT: Record<string, string> = {
+  normal: "border-l-emerald-500",
+  warning: "border-l-amber-500",
+  critical: "border-l-red-500",
+  expired: "border-l-red-600",
 };
 
 const URGENCY_DOT: Record<string, string> = {
@@ -93,9 +117,9 @@ const URGENCY_DOT: Record<string, string> = {
 };
 
 const STATUS_BADGE: Record<string, string> = {
-  PENDING: "bg-amber-100 text-amber-700",
-  COMPLETED: "bg-emerald-100 text-emerald-700",
-  CANCELLED: "bg-slate-100 text-slate-600",
+  PENDING: "bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300",
+  COMPLETED: "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300",
+  CANCELLED: "bg-[var(--color-bg-elevated)] text-theme-secondary",
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -266,11 +290,11 @@ export function CalendarMonthView({
   return (
     <div className="space-y-4">
       {focusedEvent && (
-        <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5">
-          <span className="text-sm text-blue-800 flex-1 min-w-0">
+        <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 dark:bg-blue-500/10 dark:border-blue-500/30 rounded-lg px-4 py-2.5">
+          <span className="text-sm text-blue-800 dark:text-blue-200 flex-1 min-w-0">
             Evento seleccionado:{" "}
             <strong className="truncate">{focusedEvent.title}</strong>
-            <span className="text-blue-600 font-normal">
+            <span className="text-blue-600 dark:text-blue-300/90 font-normal">
               {" "}
               · {formatDate(new Date(focusedEvent.startDate), "dd MMM yyyy HH:mm")}
             </span>
@@ -278,7 +302,7 @@ export function CalendarMonthView({
           <button
             type="button"
             onClick={clearFocusFromUrl}
-            className="text-xs font-medium text-blue-600 hover:text-blue-800 underline flex-shrink-0"
+            className="text-xs font-medium text-blue-600 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-200 underline flex-shrink-0"
           >
             Cerrar
           </button>
@@ -290,27 +314,27 @@ export function CalendarMonthView({
         <div className="flex items-center gap-1">
           <button
             onClick={() => navigate(-1)}
-            className="p-1.5 rounded-md hover:bg-slate-100 text-slate-600"
+            className="p-1.5 rounded-md hover:bg-[var(--color-bg-hover)] text-theme-secondary"
             title="Mes anterior"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
           <button
             onClick={() => navigate(1)}
-            className="p-1.5 rounded-md hover:bg-slate-100 text-slate-600"
+            className="p-1.5 rounded-md hover:bg-[var(--color-bg-hover)] text-theme-secondary"
             title="Mes siguiente"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
-          <Button variant="ghost" size="sm" onClick={goToday} className="text-slate-600">
+          <Button variant="ghost" size="sm" onClick={goToday} className="text-theme-secondary">
             Hoy
           </Button>
         </div>
-        <h2 className="text-lg font-bold text-slate-800">
+        <h2 className="text-lg font-bold text-theme-primary">
           {MONTHS_ES[month]} {year}
         </h2>
-        <span className="text-sm text-slate-500">
-          <strong className="text-slate-700">{totalEvents}</strong>{" "}
+        <span className="text-sm text-theme-muted">
+          <strong className="text-theme-secondary">{totalEvents}</strong>{" "}
           {totalEvents === 1 ? "evento" : "eventos"} este mes
         </span>
         <div className="ml-auto">
@@ -328,11 +352,11 @@ export function CalendarMonthView({
       {/* Grid */}
       <div className="crm-card overflow-hidden">
         {/* Headers de días */}
-        <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50">
+        <div className="grid grid-cols-7 border-b border-theme bg-[var(--color-bg-input)]">
           {WEEKDAYS.map((w) => (
             <div
               key={w}
-              className="px-2 py-2 text-xs font-semibold text-slate-500 uppercase text-center"
+              className="px-2 py-2 text-xs font-semibold text-theme-muted uppercase text-center"
             >
               {w}
             </div>
@@ -367,7 +391,7 @@ export function CalendarMonthView({
               allItems.push({
                 id: e.id,
                 label: completed ? `✓ ${e.title}` : `${time} ${e.title}`,
-                style: `${TYPE_STYLE[e.type] ?? "bg-slate-100 text-slate-600 border-slate-200"} ${completed ? "line-through opacity-50" : ""}`,
+                style: `${TYPE_STYLE[e.type] ?? "bg-[var(--color-bg-elevated)] text-theme-secondary border-theme"} ${completed ? "line-through opacity-50" : ""}`,
                 isAuto: false,
               });
             });
@@ -387,14 +411,14 @@ export function CalendarMonthView({
                   clearFocusFromUrl();
                   setDayOpen(cell.date);
                 }}
-                className={`min-h-[90px] sm:min-h-[110px] p-1.5 border-r border-b border-slate-100 text-left flex flex-col hover:bg-slate-50 transition-colors ${
+                className={`min-h-[90px] sm:min-h-[110px] p-1.5 border-r border-b border-theme-subtle text-left flex flex-col hover:bg-[var(--color-bg-hover)] transition-colors ${
                   hasFocusedEvent
-                    ? "ring-2 ring-inset ring-blue-500 bg-blue-50/60 z-[1]"
+                    ? "ring-2 ring-inset ring-blue-500 bg-blue-50/60 dark:bg-blue-500/10 z-[1]"
                     : hasCritical && cell.inMonth
-                      ? "bg-red-50/40"
+                      ? "bg-red-50/40 dark:bg-red-500/10"
                       : cell.inMonth
-                        ? "bg-white"
-                        : "bg-slate-50/50"
+                        ? "bg-[var(--color-bg-card)]"
+                        : "bg-[var(--color-bg-input)]/50"
                 }`}
               >
                 <div className="flex items-center justify-between mb-1">
@@ -403,8 +427,8 @@ export function CalendarMonthView({
                       isToday
                         ? "bg-blue-600 text-white rounded-full w-5 h-5"
                         : cell.inMonth
-                          ? "text-slate-700"
-                          : "text-slate-400"
+                          ? "text-theme-secondary"
+                          : "text-theme-muted"
                     }`}
                   >
                     {cell.date.getDate()}
@@ -417,7 +441,7 @@ export function CalendarMonthView({
                       })[0].urgency]}`} />
                     )}
                     {totalDay > 0 && (
-                      <span className="text-[9px] text-slate-400 font-medium">
+                      <span className="text-[9px] text-theme-muted font-medium">
                         {totalDay}
                       </span>
                     )}
@@ -438,7 +462,7 @@ export function CalendarMonthView({
                     </div>
                   ))}
                   {extra > 0 && (
-                    <p className="text-[10px] text-slate-500 font-semibold">
+                    <p className="text-[10px] text-theme-muted font-semibold">
                       + {extra} más
                     </p>
                   )}
@@ -451,26 +475,26 @@ export function CalendarMonthView({
 
       {/* Leyenda */}
       <div className="flex flex-wrap items-center gap-2 text-xs">
-        <span className="text-slate-400 font-semibold uppercase text-[10px]">Eventos:</span>
+        <span className="text-theme-muted font-semibold uppercase text-[10px]">Eventos:</span>
         {EVENT_TYPES.map((t) => (
           <span
             key={t.value}
             className={`px-2 py-0.5 rounded-full border ${
-              TYPE_STYLE[t.value] ?? "bg-slate-100"
+              TYPE_STYLE[t.value] ?? "bg-[var(--color-bg-elevated)]"
             }`}
           >
             {t.label}
           </span>
         ))}
-        <span className="text-slate-300 mx-1">|</span>
-        <span className="text-slate-400 font-semibold uppercase text-[10px]">Automáticos:</span>
-        <span className="flex items-center gap-1 px-2 py-0.5 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200">
+        <span className="text-theme-muted/50 mx-1">|</span>
+        <span className="text-theme-muted font-semibold uppercase text-[10px]">Automáticos:</span>
+        <span className="flex items-center gap-1 px-2 py-0.5 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/25">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> +30 días
         </span>
-        <span className="flex items-center gap-1 px-2 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-300">
+        <span className="flex items-center gap-1 px-2 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/25">
           <span className="w-1.5 h-1.5 rounded-full bg-amber-400" /> 8-30 días
         </span>
-        <span className="flex items-center gap-1 px-2 py-0.5 rounded-full border bg-red-50 text-red-700 border-red-300">
+        <span className="flex items-center gap-1 px-2 py-0.5 rounded-full border bg-red-50 text-red-700 border-red-300 dark:bg-red-500/10 dark:text-red-300 dark:border-red-500/25">
           <span className="w-1.5 h-1.5 rounded-full bg-red-500" /> ≤7 días
         </span>
       </div>
@@ -479,7 +503,7 @@ export function CalendarMonthView({
       <Dialog open={!!dayOpen} onOpenChange={(o) => !o && closeDayDialog()}>
         <DialogContent className="sm:max-w-md p-0 gap-0">
           <div className="px-6 pt-5 pb-3 flex items-center justify-between">
-            <h3 className="text-base font-semibold text-slate-800">
+            <h3 className="text-base font-semibold text-theme-primary">
               {dayOpen
                 ? formatDate(dayOpen, "EEEE dd 'de' MMMM yyyy")
                 : ""}
@@ -499,28 +523,30 @@ export function CalendarMonthView({
             {dayAutoEvents.map((a) => (
               <div
                 key={a.id}
-                className={`p-3 rounded-lg border ${URGENCY_STYLE[a.urgency]}`}
+                className={`p-3 rounded-lg border border-theme bg-[var(--color-bg-card)] border-l-4 ${
+                  URGENCY_ACCENT[a.urgency] ?? "border-l-emerald-500"
+                }`}
               >
                 <div className="flex items-start justify-between gap-2 mb-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     {a.urgency === "critical" || a.urgency === "expired" ? (
-                      <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                      <AlertTriangle className="w-4 h-4 text-red-500 dark:text-red-400 flex-shrink-0" />
                     ) : a.urgency === "warning" ? (
-                      <Clock className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                      <Clock className="w-4 h-4 text-amber-500 dark:text-amber-400 flex-shrink-0" />
                     ) : (
-                      <Shield className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                      <Shield className="w-4 h-4 text-emerald-500 dark:text-emerald-400 flex-shrink-0" />
                     )}
-                    <p className="text-sm font-semibold">{a.title}</p>
+                    <p className="text-sm font-semibold text-theme-primary">{a.title}</p>
                   </div>
                   <span
                     className={`text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${
                       a.urgency === "expired"
-                        ? "bg-red-200 text-red-800"
+                        ? "bg-red-100 text-red-800 dark:bg-red-500/15 dark:text-red-300"
                         : a.urgency === "critical"
-                          ? "bg-red-100 text-red-700"
+                          ? "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300"
                           : a.urgency === "warning"
-                            ? "bg-amber-100 text-amber-700"
-                            : "bg-emerald-100 text-emerald-700"
+                            ? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"
+                            : "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
                     }`}
                   >
                     {a.daysUntil < 0
@@ -530,21 +556,24 @@ export function CalendarMonthView({
                         : `${a.daysUntil}d restantes`}
                   </span>
                 </div>
-                <div className="text-xs space-y-0.5 mt-1.5">
+                <div className="text-xs space-y-0.5 mt-1.5 text-theme-secondary">
                   <p>
-                    <span className="text-slate-500">Cliente:</span>{" "}
-                    <Link href={`/contacts/${a.contactId}`} className="text-blue-600 hover:underline font-medium">
+                    <span className="text-theme-muted">Cliente:</span>{" "}
+                    <Link
+                      href={`/contacts/${a.contactId}`}
+                      className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                    >
                       {a.contactName}
                     </Link>
                   </p>
                   <p>
-                    <span className="text-slate-500">Póliza:</span>{" "}
-                    <span className="font-mono">{a.policyNumber}</span>
-                    {a.insurer && <span className="text-slate-400"> · {a.insurer}</span>}
+                    <span className="text-theme-muted">Póliza:</span>{" "}
+                    <span className="font-mono text-theme-primary">{a.policyNumber}</span>
+                    {a.insurer && <span className="text-theme-muted"> · {a.insurer}</span>}
                   </p>
                   <p>
-                    <span className="text-slate-500">Prima:</span>{" "}
-                    <span className="font-semibold">{formatCurrency(a.premium)}</span>
+                    <span className="text-theme-muted">Prima:</span>{" "}
+                    <span className="font-semibold text-theme-primary">{formatCurrency(a.premium)}</span>
                   </p>
                 </div>
               </div>
@@ -552,14 +581,14 @@ export function CalendarMonthView({
 
             {dayEvents.length === 0 && dayAutoEvents.length === 0 ? (
               <div className="text-center py-6">
-                <p className="text-sm text-slate-400 mb-3">
+                <p className="text-sm text-theme-muted mb-3">
                   Sin eventos en este día.
                 </p>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => dayOpen && openCreateForDate(dayOpen)}
-                  className="gap-1.5 text-blue-600 border-blue-200 hover:bg-blue-50"
+                  className="gap-1.5 text-blue-600 border-blue-200 hover:bg-blue-50 dark:text-blue-300 dark:border-blue-500/30 dark:hover:bg-blue-500/10"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   Crear evento aquí
@@ -570,33 +599,35 @@ export function CalendarMonthView({
                 <div
                   key={e.id}
                   ref={e.id === highlightedEventId ? highlightRef : undefined}
-                  className={`p-3 rounded-lg border ${
-                    TYPE_STYLE[e.type] ?? "bg-slate-100 border-slate-200"
+                  className={`p-3 rounded-lg border border-theme bg-[var(--color-bg-card)] border-l-4 ${
+                    TYPE_ACCENT[e.type] ?? "border-l-[var(--color-border)]"
                   } ${e.status === "COMPLETED" ? "opacity-60" : ""} ${
                     e.id === highlightedEventId
-                      ? "ring-2 ring-blue-500 ring-offset-2 shadow-md"
+                      ? "ring-2 ring-blue-500 ring-offset-2 ring-offset-[var(--color-bg-card)] shadow-md"
                       : ""
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2 mb-1">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 min-w-0">
                       {e.status === "COMPLETED" && (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
                       )}
-                      <p className={`text-sm font-semibold text-slate-800 ${e.status === "COMPLETED" ? "line-through" : ""}`}>
+                      <p
+                        className={`text-sm font-semibold text-theme-primary ${e.status === "COMPLETED" ? "line-through" : ""}`}
+                      >
                         {e.title}
                       </p>
                     </div>
                     <span
-                      className={`text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 ${
-                        STATUS_BADGE[e.status] ?? "bg-slate-100"
+                      className={`text-[10px] font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 flex-shrink-0 ${
+                        STATUS_BADGE[e.status] ?? "bg-[var(--color-bg-elevated)] text-theme-secondary"
                       }`}
                     >
                       {e.status === "COMPLETED" && <CheckCircle2 className="w-2.5 h-2.5" />}
                       {STATUS_LABEL[e.status] ?? e.status}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-600">
+                  <p className="text-xs text-theme-secondary">
                     {new Date(e.startDate).toLocaleTimeString("es-MX", {
                       hour: "2-digit",
                       minute: "2-digit",
@@ -609,18 +640,18 @@ export function CalendarMonthView({
                     · {typeLabel(e.type)}
                   </p>
                   {e.contact && (
-                    <p className="text-xs text-slate-500 mt-1">
+                    <p className="text-xs text-theme-muted mt-1">
                       Contacto:{" "}
                       <Link
                         href={`/contacts/${e.contact.id}`}
-                        className="text-blue-600 hover:underline"
+                        className="text-blue-600 dark:text-blue-400 hover:underline"
                       >
                         {e.contact.fullName}
                       </Link>
                     </p>
                   )}
                   {e.description && (
-                    <p className="text-xs text-slate-600 mt-2 whitespace-pre-wrap">
+                    <p className="text-xs text-theme-secondary mt-2 whitespace-pre-wrap">
                       {e.description}
                     </p>
                   )}
@@ -628,7 +659,7 @@ export function CalendarMonthView({
                     <div className="flex gap-1.5 mt-3">
                       <button
                         onClick={() => handleComplete(e.id)}
-                        className="text-xs px-2 py-1 rounded bg-white border border-emerald-200 text-emerald-700 hover:bg-emerald-50 flex items-center gap-1"
+                        className="text-xs px-2 py-1 rounded border border-emerald-200 bg-[var(--color-bg-elevated)] text-emerald-700 hover:bg-emerald-50 dark:border-emerald-500/30 dark:text-emerald-400 dark:hover:bg-emerald-500/10 flex items-center gap-1"
                       >
                         <CheckCircle2 className="w-3 h-3" />
                         Completar
@@ -638,13 +669,13 @@ export function CalendarMonthView({
                           setEditing(e);
                           closeDayDialog();
                         }}
-                        className="text-xs px-2 py-1 rounded bg-white border border-slate-200 text-slate-700 hover:bg-slate-50"
+                        className="text-xs px-2 py-1 rounded border border-theme bg-[var(--color-bg-elevated)] text-theme-secondary hover:bg-[var(--color-bg-hover)]"
                       >
                         Editar
                       </button>
                       <button
                         onClick={() => handleDelete(e.id)}
-                        className="text-xs px-2 py-1 rounded bg-white border border-red-200 text-red-700 hover:bg-red-50 flex items-center gap-1"
+                        className="text-xs px-2 py-1 rounded border border-red-200 bg-[var(--color-bg-elevated)] text-red-700 hover:bg-red-50 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10 flex items-center gap-1"
                       >
                         <Trash2 className="w-3 h-3" />
                         Eliminar

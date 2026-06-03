@@ -40,6 +40,11 @@ async function main() {
     throw new Error("No hay contactos. Ejecuta primero: npm run db:seed");
   }
 
+  const tenantId = contact.tenantId ?? admin.tenantId;
+  if (!tenantId) {
+    throw new Error("No hay tenant asociado al usuario o contacto de demo");
+  }
+
   await prisma.calendarEvent.deleteMany({
     where: { title: { startsWith: DEMO_PREFIX } },
   });
@@ -92,6 +97,7 @@ async function main() {
   for (const demo of demos) {
     await prisma.calendarEvent.create({
       data: {
+        tenantId,
         title: demo.title,
         type: demo.type,
         contactId: contact.id,

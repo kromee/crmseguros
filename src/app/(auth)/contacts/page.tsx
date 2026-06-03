@@ -1,9 +1,12 @@
-import { Download, MoreHorizontal, Printer, UserPlus } from "lucide-react";
+import { UserPlus } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { CONTACT_ORIGINS, CONTACT_STATUS_LABELS } from "@/core/constants";
+import { CONTACT_STATUS_LABELS } from "@/core/constants";
 import { getInitials } from "@/core/utils/format";
+import { requireTenantSession } from "@/core/tenant";
+import { getTenantBranding } from "@/core/tenant/branding";
+import { getTenantCatalogUi } from "@/core/tenant/catalog-ui";
 import { contactsFiltersSchema } from "@/modules/contacts/schemas/contact.schema";
 import { contactService } from "@/modules/contacts/services/contact.service";
 import { contactRepository } from "@/modules/contacts/repositories/contact.repository";
@@ -38,23 +41,19 @@ function colorForName(name: string) {
   return AVATAR_COLORS[hash % AVATAR_COLORS.length];
 }
 
-function originLabel(origin: string) {
-  return CONTACT_ORIGINS.find((o) => o.value === origin)?.label ?? origin;
-}
-
 const ORIGIN_COLORS: Record<string, string> = {
-  WHATSAPP: "bg-green-100 text-green-700",
-  FACEBOOK: "bg-blue-100 text-blue-700",
-  INSTAGRAM: "bg-pink-100 text-pink-700",
-  TIKTOK: "bg-slate-900/10 text-slate-700",
-  RECOMENDADO: "bg-yellow-100 text-yellow-700",
-  FAMILIA: "bg-orange-100 text-orange-700",
-  AMIGO: "bg-orange-100 text-orange-700",
-  SITIO_WEB: "bg-slate-100 text-slate-600",
-  GOOGLE_MAPS: "bg-red-100 text-red-700",
-  PUBLICIDAD: "bg-purple-100 text-purple-700",
-  STAND: "bg-teal-100 text-teal-700",
-  OTRO: "bg-slate-100 text-slate-600",
+  WHATSAPP: "bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400",
+  FACEBOOK: "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400",
+  INSTAGRAM: "bg-pink-100 text-pink-700 dark:bg-pink-500/15 dark:text-pink-400",
+  TIKTOK: "bg-black/10 text-theme-secondary dark:bg-white/10 dark:text-slate-300",
+  RECOMENDADO: "bg-yellow-100 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-400",
+  FAMILIA: "bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-400",
+  AMIGO: "bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-400",
+  SITIO_WEB: "bg-[var(--color-bg-elevated)] text-theme-secondary dark:bg-white/10 dark:text-slate-300",
+  GOOGLE_MAPS: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400",
+  PUBLICIDAD: "bg-purple-100 text-purple-700 dark:bg-purple-500/15 dark:text-purple-400",
+  STAND: "bg-teal-100 text-teal-700 dark:bg-teal-500/15 dark:text-teal-400",
+  OTRO: "bg-[var(--color-bg-elevated)] text-theme-secondary dark:bg-white/10 dark:text-slate-300",
 };
 
 export default async function ContactsPage({ searchParams }: PageProps) {
@@ -68,9 +67,13 @@ export default async function ContactsPage({ searchParams }: PageProps) {
     pageSize: params.pageSize ?? "10",
   });
 
-  const [list, counts] = await Promise.all([
-    contactService.list(filters),
-    contactRepository.countByType(),
+  const { tenantId } = await requireTenantSession();
+  const [list, counts, branding, catalog, growth] = await Promise.all([
+    contactService.list(tenantId, filters),
+    contactRepository.countByType(tenantId),
+    getTenantBranding(tenantId),
+    getTenantCatalogUi(tenantId),
+    contactRepository.getMonthlyClientGrowth(tenantId),
   ]);
 
   const viewLabel = filters.type === "PROSPECT" ? "Prospectos" : "Clientes";
@@ -80,9 +83,9 @@ export default async function ContactsPage({ searchParams }: PageProps) {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Directorio de Contactos</h1>
-          <p className="text-sm text-slate-500 mt-0.5">
-            Administra clientes y prospectos de Seguros Mexa
+          <h1 className="text-2xl font-bold text-theme-primary">Directorio de Contactos</h1>
+          <p className="text-sm text-theme-secondary mt-0.5">
+            Administra clientes y prospectos de {branding.name}
           </p>
         </div>
         <Link href="/contacts/new">
@@ -94,30 +97,18 @@ export default async function ContactsPage({ searchParams }: PageProps) {
       </div>
 
       <div className="flex gap-5">
-        <ContactsFilters counts={counts} />
+        <ContactsFilters counts={counts} growth={growth} contactOrigins={catalog.contactOrigins} />
 
         <div className="flex-1 crm-card overflow-hidden">
-          {/* Toolbar */}
-          <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100">
-            <span className="text-sm font-medium text-blue-600 bg-blue-50 px-3 py-1 rounded-full whitespace-nowrap">
+          <div className="flex items-center gap-3 px-5 py-4 border-b border-theme-subtle">
+            <span className="text-sm font-medium theme-chip px-3 py-1 rounded-full whitespace-nowrap">
               Vista Actual: {viewLabel}
             </span>
             <ContactsSearch />
-            <div className="flex items-center gap-2 ml-auto">
-              <button className="p-1.5 hover:bg-slate-100 rounded-lg" title="Exportar">
-                <Download className="w-4 h-4 text-slate-500" />
-              </button>
-              <button className="p-1.5 hover:bg-slate-100 rounded-lg" title="Imprimir">
-                <Printer className="w-4 h-4 text-slate-500" />
-              </button>
-              <button className="p-1.5 hover:bg-slate-100 rounded-lg" title="Más">
-                <MoreHorizontal className="w-4 h-4 text-slate-500" />
-              </button>
-            </div>
           </div>
 
           {list.items.length === 0 ? (
-            <div className="p-12 text-center text-sm text-slate-400">
+            <div className="p-12 text-center text-sm text-theme-muted">
               No se encontraron contactos con los filtros actuales.
             </div>
           ) : (
@@ -133,8 +124,8 @@ export default async function ContactsPage({ searchParams }: PageProps) {
               </thead>
               <tbody>
                 {list.items.map((c) => (
-                  <tr key={c.id} className="border-t border-slate-50">
-                    <td className="px-5 py-3 text-xs text-slate-400 font-mono">{c.code}</td>
+                  <tr key={c.id} className="border-t border-theme-subtle">
+                    <td className="px-5 py-3 text-xs text-theme-muted font-mono">{c.code}</td>
                     <td className="px-5 py-3">
                       <Link
                         href={`/contacts/${c.id}`}
@@ -149,27 +140,27 @@ export default async function ContactsPage({ searchParams }: PageProps) {
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="text-sm font-semibold text-slate-800">{c.fullName}</p>
-                          <p className="text-xs text-slate-400">
+                          <p className="text-sm font-semibold text-theme-primary">{c.fullName}</p>
+                          <p className="text-xs text-theme-muted">
                             {c.assignedUser?.name ?? "Sin asignar"}
                           </p>
                         </div>
                       </Link>
                     </td>
                     <td className="px-5 py-3">
-                      <p className="text-sm text-slate-700">{c.phone}</p>
-                      <p className="text-xs text-slate-400">{c.email ?? "—"}</p>
+                      <p className="text-sm text-theme-secondary">{c.phone}</p>
+                      <p className="text-xs text-theme-muted">{c.email ?? "—"}</p>
                     </td>
                     <td className="px-5 py-3">
                       <span
                         className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                          ORIGIN_COLORS[c.origin] ?? "bg-slate-100 text-slate-600"
+                          ORIGIN_COLORS[c.origin] ?? "bg-[var(--color-bg-elevated)] text-theme-secondary dark:bg-white/10 dark:text-slate-300"
                         }`}
                       >
-                        {originLabel(c.origin)}
+                        {catalog.contactOriginLabel(c.origin)}
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-sm text-slate-600">
+                    <td className="px-5 py-3 text-sm text-theme-secondary">
                       {c.city ? `${c.city}${c.state ? `, ${c.state}` : ""}` : "—"}
                     </td>
                     <td className="px-5 py-3">

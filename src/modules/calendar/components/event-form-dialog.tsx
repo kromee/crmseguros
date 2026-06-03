@@ -79,10 +79,10 @@ function SectionTitle({
 }) {
   return (
     <div className="flex items-center gap-2 pb-2">
-      <div className="flex items-center justify-center w-6 h-6 rounded-md bg-slate-100">
-        <Icon className="w-3.5 h-3.5 text-slate-500" />
+      <div className="flex items-center justify-center w-6 h-6 rounded-md bg-[var(--color-bg-elevated)]">
+        <Icon className="w-3.5 h-3.5 text-theme-muted" />
       </div>
-      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+      <span className="text-xs font-semibold text-theme-muted uppercase tracking-wider">
         {children}
       </span>
     </div>
@@ -374,7 +374,7 @@ export function EventFormDialog({
                 </div>
 
                 <div className="col-span-2 flex items-center gap-6 pt-1">
-                  <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+                  <label className="flex items-center gap-2 text-sm text-theme-secondary cursor-pointer">
                     <input
                       type="checkbox"
                       {...register("notifyAgent")}
@@ -382,7 +382,7 @@ export function EventFormDialog({
                     />
                     Notificar al asesor
                   </label>
-                  <label className="flex items-center gap-2 text-sm text-slate-400 cursor-pointer">
+                  <label className="flex items-center gap-2 text-sm text-theme-muted cursor-pointer">
                     <input
                       type="checkbox"
                       {...register("notifyClient")}
@@ -397,12 +397,12 @@ export function EventFormDialog({
           </div>
 
           {/* Footer */}
-          <div className="flex-shrink-0 flex items-center justify-end gap-2 border-t border-slate-100 bg-slate-50/80 px-6 py-4">
+          <div className="flex-shrink-0 flex items-center justify-end gap-2 border-t border-theme-subtle bg-[var(--color-bg-input)]/80 px-6 py-4">
             <Button
               type="button"
               variant="ghost"
               onClick={() => onOpenChange(false)}
-              className="text-slate-500"
+              className="text-theme-muted"
             >
               Cancelar
             </Button>

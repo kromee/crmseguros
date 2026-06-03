@@ -2,6 +2,7 @@ import { existsSync } from "fs";
 import { readFile } from "fs/promises";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { canAccessTenantFile } from "@/infrastructure/storage/file-access";
 import { getAbsolutePath } from "@/infrastructure/storage/local-storage";
 
 const MIME_MAP: Record<string, string> = {
@@ -26,6 +27,16 @@ export async function GET(
 
   if (relativePath.includes("..")) {
     return NextResponse.json({ error: "Ruta inválida" }, { status: 400 });
+  }
+
+  if (
+    !canAccessTenantFile(
+      relativePath,
+      session.user.tenantId,
+      session.user.role
+    )
+  ) {
+    return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
 
   const absolutePath = getAbsolutePath(relativePath);

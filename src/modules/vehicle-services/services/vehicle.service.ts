@@ -9,25 +9,30 @@ import type {
 } from "../schemas/vehicle.schema";
 
 export const vehicleService = {
-  async list(filters: VehiclesFilters) {
-    return vehicleRepository.list(filters);
+  async list(tenantId: string, filters: VehiclesFilters) {
+    return vehicleRepository.list(tenantId, filters);
   },
 
-  async listByContact(contactId: string) {
-    return vehicleRepository.listByContact(contactId);
+  async listByContact(tenantId: string, contactId: string) {
+    return vehicleRepository.listByContact(tenantId, contactId);
   },
 
-  async getById(id: string) {
-    const v = await vehicleRepository.findById(id);
+  async getById(tenantId: string, id: string) {
+    const v = await vehicleRepository.findById(tenantId, id);
     if (!v) throw new NotFoundError("Trámite vehicular");
     return v;
   },
 
-  async create(input: CreateVehicleInput, currentUserId: string | null) {
-    const created = await vehicleRepository.create(input);
+  async create(
+    tenantId: string,
+    input: CreateVehicleInput,
+    currentUserId: string | null
+  ) {
+    const created = await vehicleRepository.create(tenantId, input);
     if (currentUserId) {
       await prisma.auditLog.create({
         data: {
+          tenantId,
           userId: currentUserId,
           entity: "vehicle_services",
           entityId: created.id,
@@ -42,13 +47,19 @@ export const vehicleService = {
     return created;
   },
 
-  async update(id: string, input: UpdateVehicleInput, currentUserId: string | null) {
-    const existing = await vehicleRepository.findById(id);
+  async update(
+    tenantId: string,
+    id: string,
+    input: UpdateVehicleInput,
+    currentUserId: string | null
+  ) {
+    const existing = await vehicleRepository.findById(tenantId, id);
     if (!existing) throw new NotFoundError("Trámite vehicular");
-    const updated = await vehicleRepository.update(id, input);
+    const updated = await vehicleRepository.update(tenantId, id, input);
     if (currentUserId) {
       await prisma.auditLog.create({
         data: {
+          tenantId,
           userId: currentUserId,
           entity: "vehicle_services",
           entityId: id,
@@ -60,13 +71,14 @@ export const vehicleService = {
     return updated;
   },
 
-  async remove(id: string, currentUserId: string | null) {
-    const existing = await vehicleRepository.findById(id);
+  async remove(tenantId: string, id: string, currentUserId: string | null) {
+    const existing = await vehicleRepository.findById(tenantId, id);
     if (!existing) throw new NotFoundError("Trámite vehicular");
-    await vehicleRepository.delete(id);
+    await vehicleRepository.delete(tenantId, id);
     if (currentUserId) {
       await prisma.auditLog.create({
         data: {
+          tenantId,
           userId: currentUserId,
           entity: "vehicle_services",
           entityId: id,

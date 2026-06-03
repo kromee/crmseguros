@@ -9,25 +9,30 @@ import type {
 } from "../schemas/pension.schema";
 
 export const pensionService = {
-  async list(filters: PensionsFilters) {
-    return pensionRepository.list(filters);
+  async list(tenantId: string, filters: PensionsFilters) {
+    return pensionRepository.list(tenantId, filters);
   },
 
-  async listByContact(contactId: string) {
-    return pensionRepository.listByContact(contactId);
+  async listByContact(tenantId: string, contactId: string) {
+    return pensionRepository.listByContact(tenantId, contactId);
   },
 
-  async getById(id: string) {
-    const p = await pensionRepository.findById(id);
+  async getById(tenantId: string, id: string) {
+    const p = await pensionRepository.findById(tenantId, id);
     if (!p) throw new NotFoundError("Servicio de pensión");
     return p;
   },
 
-  async create(input: CreatePensionInput, currentUserId: string | null) {
-    const created = await pensionRepository.create(input);
+  async create(
+    tenantId: string,
+    input: CreatePensionInput,
+    currentUserId: string | null
+  ) {
+    const created = await pensionRepository.create(tenantId, input);
     if (currentUserId) {
       await prisma.auditLog.create({
         data: {
+          tenantId,
           userId: currentUserId,
           entity: "pension_services",
           entityId: created.id,
@@ -39,13 +44,19 @@ export const pensionService = {
     return created;
   },
 
-  async update(id: string, input: UpdatePensionInput, currentUserId: string | null) {
-    const existing = await pensionRepository.findById(id);
+  async update(
+    tenantId: string,
+    id: string,
+    input: UpdatePensionInput,
+    currentUserId: string | null
+  ) {
+    const existing = await pensionRepository.findById(tenantId, id);
     if (!existing) throw new NotFoundError("Servicio de pensión");
-    const updated = await pensionRepository.update(id, input);
+    const updated = await pensionRepository.update(tenantId, id, input);
     if (currentUserId) {
       await prisma.auditLog.create({
         data: {
+          tenantId,
           userId: currentUserId,
           entity: "pension_services",
           entityId: id,
@@ -57,13 +68,14 @@ export const pensionService = {
     return updated;
   },
 
-  async remove(id: string, currentUserId: string | null) {
-    const existing = await pensionRepository.findById(id);
+  async remove(tenantId: string, id: string, currentUserId: string | null) {
+    const existing = await pensionRepository.findById(tenantId, id);
     if (!existing) throw new NotFoundError("Servicio de pensión");
-    await pensionRepository.delete(id);
+    await pensionRepository.delete(tenantId, id);
     if (currentUserId) {
       await prisma.auditLog.create({
         data: {
+          tenantId,
           userId: currentUserId,
           entity: "pension_services",
           entityId: id,

@@ -1,8 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
 import { AppError } from "@/core/errors/app-error";
+import { requireTenantSession } from "@/core/tenant";
 import type { ActionResult } from "@/core/types/action-result";
 import {
   createPensionSchema,
@@ -12,17 +12,11 @@ import {
 } from "../schemas/pension.schema";
 import { pensionService } from "../services/pension.service";
 
-async function requireUser() {
-  const session = await auth();
-  if (!session?.user?.id) throw new AppError("No autorizado", 401);
-  return session.user;
-}
-
 export async function createPensionAction(
   input: CreatePensionInput
 ): Promise<ActionResult<{ id: string }>> {
   try {
-    const user = await requireUser();
+    const session = await requireTenantSession();
     const parsed = createPensionSchema.safeParse(input);
     if (!parsed.success) {
       return {
@@ -31,7 +25,11 @@ export async function createPensionAction(
         fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]>,
       };
     }
-    const created = await pensionService.create(parsed.data, user.id);
+    const created = await pensionService.create(
+      session.tenantId,
+      parsed.data,
+      session.userId
+    );
     revalidatePath(`/contacts/${created.contactId}`);
     revalidatePath("/services");
     return { ok: true, data: { id: created.id } };
@@ -48,7 +46,7 @@ export async function updatePensionAction(
   input: UpdatePensionInput
 ): Promise<ActionResult> {
   try {
-    const user = await requireUser();
+    const session = await requireTenantSession();
     const parsed = updatePensionSchema.safeParse(input);
     if (!parsed.success) {
       return {
@@ -57,7 +55,12 @@ export async function updatePensionAction(
         fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]>,
       };
     }
-    const updated = await pensionService.update(id, parsed.data, user.id);
+    const updated = await pensionService.update(
+      session.tenantId,
+      id,
+      parsed.data,
+      session.userId
+    );
     revalidatePath(`/contacts/${updated.contactId}`);
     revalidatePath("/services");
     return { ok: true, data: null };
@@ -74,8 +77,8 @@ export async function deletePensionAction(
   contactId: string
 ): Promise<ActionResult> {
   try {
-    const user = await requireUser();
-    await pensionService.remove(id, user.id);
+    const session = await requireTenantSession();
+    await pensionService.remove(session.tenantId, id, session.userId);
     revalidatePath(`/contacts/${contactId}`);
     revalidatePath("/services");
     return { ok: true, data: null };

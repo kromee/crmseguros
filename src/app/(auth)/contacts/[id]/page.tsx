@@ -11,9 +11,12 @@ import {
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
+import { isTenantAdmin } from "@/core/tenant/roles";
+import { requireTenantSession } from "@/core/tenant";
+import { getTenantCatalogUi } from "@/core/tenant/catalog-ui";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { CONTACT_ORIGINS, CONTACT_STATUS_LABELS } from "@/core/constants";
+import { CONTACT_STATUS_LABELS } from "@/core/constants";
 import { NotFoundError } from "@/core/errors/app-error";
 import { formatDate, getInitials } from "@/core/utils/format";
 import { activityService } from "@/modules/activities/services/activity.service";
@@ -31,10 +34,6 @@ import {
 
 export const dynamic = "force-dynamic";
 
-function originLabel(value: string) {
-  return CONTACT_ORIGINS.find((o) => o.value === value)?.label ?? value;
-}
-
 export default async function ContactDetailPage({
   params,
 }: {
@@ -43,10 +42,11 @@ export default async function ContactDetailPage({
   const { id } = await params;
   const session = await auth();
   if (!session?.user) return null;
+  const { tenantId } = await requireTenantSession();
 
   let contact;
   try {
-    contact = await contactService.getById(id);
+    contact = await contactService.getById(tenantId, id);
   } catch (err) {
     if (err instanceof NotFoundError) notFound();
     throw err;
@@ -56,7 +56,8 @@ export default async function ContactDetailPage({
   const pensions = contact.pensionServices.map(serializePension);
   const vehicles = contact.vehicleServices.map(serializeVehicle);
 
-  const activityCounters = await activityService.countByContact(id);
+  const activityCounters = await activityService.countByContact(tenantId, id);
+  const catalog = await getTenantCatalogUi(tenantId);
   const recentActivities = contact.activities.slice(0, 5).map((a) => ({
     id: a.id,
     type: a.type,
@@ -76,7 +77,7 @@ export default async function ContactDetailPage({
       {/* Header */}
       <div className="flex items-center gap-2">
         <Link href="/contacts">
-          <Button variant="ghost" size="sm" className="gap-1.5 text-slate-500">
+          <Button variant="ghost" size="sm" className="gap-1.5 text-theme-muted">
             <ArrowLeft className="w-4 h-4" />
             Detalle de contacto
           </Button>
@@ -98,13 +99,13 @@ export default async function ContactDetailPage({
                 </AvatarFallback>
               </Avatar>
               <div>
-                <h1 className="text-lg font-bold text-slate-800">{contact.fullName}</h1>
-                <p className="text-sm text-slate-400 font-mono">{contact.code}</p>
+                <h1 className="text-lg font-bold text-theme-primary">{contact.fullName}</h1>
+                <p className="text-sm text-theme-muted font-mono">{contact.code}</p>
                 <div className="flex flex-wrap gap-1.5 mt-1.5">
                   <span className="inline-flex items-center gap-1 text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">
                     {typeLabel}
                   </span>
-                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-theme-secondary bg-[var(--color-bg-elevated)] border border-theme px-2 py-0.5 rounded-full">
                     {statusLabel}
                   </span>
                 </div>
@@ -112,37 +113,37 @@ export default async function ContactDetailPage({
             </div>
 
             <div className="space-y-2.5 text-sm">
-              <div className="flex items-center gap-2 text-slate-600">
-                <Phone className="w-3.5 h-3.5 text-slate-400" />
+              <div className="flex items-center gap-2 text-theme-secondary">
+                <Phone className="w-3.5 h-3.5 text-theme-muted" />
                 {contact.phone}
               </div>
-              <div className="flex items-center gap-2 text-slate-600">
-                <Mail className="w-3.5 h-3.5 text-slate-400" />
+              <div className="flex items-center gap-2 text-theme-secondary">
+                <Mail className="w-3.5 h-3.5 text-theme-muted" />
                 {contact.email ?? "Sin correo"}
               </div>
-              <div className="flex items-center gap-2 text-slate-600">
-                <Calendar className="w-3.5 h-3.5 text-slate-400" />
+              <div className="flex items-center gap-2 text-theme-secondary">
+                <Calendar className="w-3.5 h-3.5 text-theme-muted" />
                 {contact.birthDate
                   ? formatDate(contact.birthDate, "dd MMM yyyy")
                   : "Fecha de nacimiento no registrada"}
               </div>
               {contact.activity && (
-                <div className="flex items-center gap-2 text-slate-600">
-                  <Briefcase className="w-3.5 h-3.5 text-slate-400" />
+                <div className="flex items-center gap-2 text-theme-secondary">
+                  <Briefcase className="w-3.5 h-3.5 text-theme-muted" />
                   {contact.activity}
                 </div>
               )}
-              <div className="flex items-center gap-2 text-slate-600">
-                <Globe className="w-3.5 h-3.5 text-slate-400" />
-                {originLabel(contact.origin)}
+              <div className="flex items-center gap-2 text-theme-secondary">
+                <Globe className="w-3.5 h-3.5 text-theme-muted" />
+                {catalog.contactOriginLabel(contact.origin)}
               </div>
-              <div className="flex items-center gap-2 text-slate-500 text-xs">
-                <Clock className="w-3.5 h-3.5 text-slate-400" />
+              <div className="flex items-center gap-2 text-theme-muted text-xs">
+                <Clock className="w-3.5 h-3.5 text-theme-muted" />
                 Asignado a: {contact.assignedUser?.name ?? "Sin asignar"}
               </div>
               {(contact.city || contact.state) && (
-                <div className="flex items-center gap-2 text-slate-500 text-xs">
-                  <Globe className="w-3.5 h-3.5 text-slate-400" />
+                <div className="flex items-center gap-2 text-theme-muted text-xs">
+                  <Globe className="w-3.5 h-3.5 text-theme-muted" />
                   {contact.city}
                   {contact.state ? `, ${contact.state}` : ""}
                 </div>
@@ -150,12 +151,12 @@ export default async function ContactDetailPage({
             </div>
 
             {/* Contador de interacciones */}
-            <div className="mt-4 pt-3 border-t border-slate-100">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">
+            <div className="mt-4 pt-3 border-t border-theme-subtle">
+              <p className="text-xs font-semibold text-theme-muted uppercase tracking-wide mb-1">
                 Interacciones registradas
               </p>
               <div className="flex items-baseline gap-2">
-                <p className="text-2xl font-bold text-slate-800">
+                <p className="text-2xl font-bold text-theme-primary">
                   {activityCounters.total}
                 </p>
                 <Link
@@ -171,6 +172,7 @@ export default async function ContactDetailPage({
             <div className="mt-4">
               <EditContactDialog
                 contactId={contact.id}
+                contactOrigins={catalog.contactOrigins}
                 defaultValues={{
                   type: contact.type,
                   fullName: contact.fullName,
@@ -192,7 +194,7 @@ export default async function ContactDetailPage({
           {/* Bitácora */}
           <div className="crm-card p-5">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-slate-800">Bitácora reciente</h2>
+              <h2 className="font-semibold text-theme-primary">Bitácora reciente</h2>
               <NewActivityButton contactId={id} variant="outline" label="Nueva" />
             </div>
 
@@ -200,7 +202,7 @@ export default async function ContactDetailPage({
               contactId={id}
               activities={recentActivities}
               currentUserId={session.user.id!}
-              isAdmin={session.user.role === "ADMIN"}
+              isAdmin={isTenantAdmin(session.user.role)}
             />
 
             {activityCounters.total > recentActivities.length && (
@@ -220,6 +222,7 @@ export default async function ContactDetailPage({
             policies={policies}
             pensions={pensions}
             vehicles={vehicles}
+            insurers={catalog.insurers}
           />
         </div>
       </div>

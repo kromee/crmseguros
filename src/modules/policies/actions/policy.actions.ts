@@ -1,12 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
 import { AppError, ValidationError } from "@/core/errors/app-error";
+import { assertCanUpload } from "@/core/tenant/entitlements";
+import { requireTenantSession } from "@/core/tenant";
 import { isPolicyClosedForFiles } from "@/core/utils/expiry";
 import type { ActionResult } from "@/core/types/action-result";
 import { prisma } from "@/infrastructure/prisma/client";
 import { saveFile, deleteFile } from "@/infrastructure/storage/local-storage";
+import { TENANT_UPLOAD_CATEGORIES } from "@/infrastructure/storage/tenant-paths";
 import {
   createPolicySchema,
   updatePolicySchema,
@@ -15,18 +17,12 @@ import {
 } from "../schemas/policy.schema";
 import { policyService } from "../services/policy.service";
 
-async function requireUser() {
-  const session = await auth();
-  if (!session?.user?.id) throw new AppError("No autorizado", 401);
-  return session.user;
-}
-
 const POLICY_FILES_LOCKED_MSG =
   "No se pueden subir ni modificar archivos en una póliza vencida o cancelada";
 
-async function assertPolicyAllowsFileChanges(policyId: string) {
-  const policy = await prisma.policy.findUnique({
-    where: { id: policyId },
+async function assertPolicyAllowsFileChanges(tenantId: string, policyId: string) {
+  const policy = await prisma.policy.findFirst({
+    where: { id: policyId, tenantId },
     select: { status: true, endDate: true },
   });
   if (!policy) throw new ValidationError("Póliza no encontrada");
@@ -39,7 +35,7 @@ export async function createPolicyAction(
   input: CreatePolicyInput
 ): Promise<ActionResult<{ id: string }>> {
   try {
-    const user = await requireUser();
+    const session = await requireTenantSession();
     const parsed = createPolicySchema.safeParse(input);
     if (!parsed.success) {
       return {
@@ -48,7 +44,11 @@ export async function createPolicyAction(
         fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]>,
       };
     }
-    const policy = await policyService.create(parsed.data, user.id);
+    const policy = await policyService.create(
+      session.tenantId,
+      parsed.data,
+      session.userId
+    );
     revalidatePath(`/contacts/${policy.contactId}`);
     revalidatePath("/services");
     return { ok: true, data: { id: policy.id } };
@@ -65,7 +65,7 @@ export async function renewPolicyAction(
   input: CreatePolicyInput
 ): Promise<ActionResult<{ id: string }>> {
   try {
-    const user = await requireUser();
+    const session = await requireTenantSession();
     const parsed = createPolicySchema.safeParse(input);
     if (!parsed.success) {
       return {
@@ -74,7 +74,12 @@ export async function renewPolicyAction(
         fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]>,
       };
     }
-    const newPolicy = await policyService.renew(oldPolicyId, parsed.data, user.id);
+    const newPolicy = await policyService.renew(
+      session.tenantId,
+      oldPolicyId,
+      parsed.data,
+      session.userId
+    );
     revalidatePath(`/contacts/${newPolicy.contactId}`);
     revalidatePath("/services");
     revalidatePath("/calendar");
@@ -92,7 +97,7 @@ export async function updatePolicyAction(
   input: UpdatePolicyInput
 ): Promise<ActionResult> {
   try {
-    const user = await requireUser();
+    const session = await requireTenantSession();
     const parsed = updatePolicySchema.safeParse(input);
     if (!parsed.success) {
       return {
@@ -101,7 +106,12 @@ export async function updatePolicyAction(
         fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]>,
       };
     }
-    const updated = await policyService.update(id, parsed.data, user.id);
+    const updated = await policyService.update(
+      session.tenantId,
+      id,
+      parsed.data,
+      session.userId
+    );
     revalidatePath(`/contacts/${updated.contactId}`);
     revalidatePath("/services");
     return { ok: true, data: null };
@@ -118,26 +128,34 @@ export async function uploadPolicyFileAction(
   formData: FormData
 ): Promise<ActionResult<{ filePath: string }>> {
   try {
-    await requireUser();
+    const session = await requireTenantSession();
     const file = formData.get("file") as File | null;
     if (!file) return { ok: false, error: "No se recibió archivo" };
 
-    await assertPolicyAllowsFileChanges(policyId);
+    await assertPolicyAllowsFileChanges(session.tenantId, policyId);
 
-    const policy = await prisma.policy.findUnique({
-      where: { id: policyId },
+    const policy = await prisma.policy.findFirst({
+      where: { id: policyId, tenantId: session.tenantId },
       select: { id: true, contactId: true, policyFile: true },
     });
     if (!policy) return { ok: false, error: "Póliza no encontrada" };
+
+    await assertCanUpload(
+      session.tenantId,
+      file.size,
+      policy.policyFile ? [policy.policyFile] : []
+    );
 
     if (policy.policyFile) {
       await deleteFile(policy.policyFile);
     }
 
-    const result = await saveFile(file, "policies");
+    const result = await saveFile(file, TENANT_UPLOAD_CATEGORIES.policies, {
+      tenantId: session.tenantId,
+    });
 
     await prisma.policy.update({
-      where: { id: policyId },
+      where: { id: policyId, tenantId: session.tenantId },
       data: { policyFile: result.path },
     });
 
@@ -162,14 +180,14 @@ export async function uploadVehiclePhotoAction(
   formData: FormData
 ): Promise<ActionResult<{ filePath: string }>> {
   try {
-    await requireUser();
+    const session = await requireTenantSession();
     const file = formData.get("file") as File | null;
     if (!file) return { ok: false, error: "No se recibió archivo" };
 
-    await assertPolicyAllowsFileChanges(policyId);
+    await assertPolicyAllowsFileChanges(session.tenantId, policyId);
 
-    const policy = await prisma.policy.findUnique({
-      where: { id: policyId },
+    const policy = await prisma.policy.findFirst({
+      where: { id: policyId, tenantId: session.tenantId },
       select: { id: true, contactId: true, type: true, vehiclePhoto: true },
     });
     if (!policy) return { ok: false, error: "Póliza no encontrada" };
@@ -177,14 +195,22 @@ export async function uploadVehiclePhotoAction(
       return { ok: false, error: "La foto del vehículo solo aplica a seguros de auto" };
     }
 
+    await assertCanUpload(
+      session.tenantId,
+      file.size,
+      policy.vehiclePhoto ? [policy.vehiclePhoto] : []
+    );
+
     if (policy.vehiclePhoto) {
       await deleteFile(policy.vehiclePhoto);
     }
 
-    const result = await saveFile(file, "policies/vehicles");
+    const result = await saveFile(file, TENANT_UPLOAD_CATEGORIES.policyVehicles, {
+      tenantId: session.tenantId,
+    });
 
     await prisma.policy.update({
-      where: { id: policyId },
+      where: { id: policyId, tenantId: session.tenantId },
       data: { vehiclePhoto: result.path },
     });
 
@@ -208,11 +234,11 @@ export async function removeVehiclePhotoAction(
   policyId: string
 ): Promise<ActionResult> {
   try {
-    await requireUser();
-    await assertPolicyAllowsFileChanges(policyId);
+    const session = await requireTenantSession();
+    await assertPolicyAllowsFileChanges(session.tenantId, policyId);
 
-    const policy = await prisma.policy.findUnique({
-      where: { id: policyId },
+    const policy = await prisma.policy.findFirst({
+      where: { id: policyId, tenantId: session.tenantId },
       select: { id: true, contactId: true, vehiclePhoto: true },
     });
     if (!policy) return { ok: false, error: "Póliza no encontrada" };
@@ -220,7 +246,7 @@ export async function removeVehiclePhotoAction(
       await deleteFile(policy.vehiclePhoto);
     }
     await prisma.policy.update({
-      where: { id: policyId },
+      where: { id: policyId, tenantId: session.tenantId },
       data: { vehiclePhoto: null },
     });
     revalidatePath(`/contacts/${policy.contactId}`);
@@ -238,11 +264,11 @@ export async function removePolicyFileAction(
   policyId: string
 ): Promise<ActionResult> {
   try {
-    await requireUser();
-    await assertPolicyAllowsFileChanges(policyId);
+    const session = await requireTenantSession();
+    await assertPolicyAllowsFileChanges(session.tenantId, policyId);
 
-    const policy = await prisma.policy.findUnique({
-      where: { id: policyId },
+    const policy = await prisma.policy.findFirst({
+      where: { id: policyId, tenantId: session.tenantId },
       select: { id: true, contactId: true, policyFile: true },
     });
     if (!policy) return { ok: false, error: "Póliza no encontrada" };
@@ -250,7 +276,7 @@ export async function removePolicyFileAction(
       await deleteFile(policy.policyFile);
     }
     await prisma.policy.update({
-      where: { id: policyId },
+      where: { id: policyId, tenantId: session.tenantId },
       data: { policyFile: null },
     });
     revalidatePath(`/contacts/${policy.contactId}`);
@@ -268,8 +294,8 @@ export async function deletePolicyAction(
   contactId: string
 ): Promise<ActionResult> {
   try {
-    const user = await requireUser();
-    await policyService.remove(id, user.id);
+    const session = await requireTenantSession();
+    await policyService.remove(session.tenantId, id, session.userId);
     revalidatePath(`/contacts/${contactId}`);
     revalidatePath("/services");
     return { ok: true, data: null };

@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { CONTACT_ORIGINS, PROSPECT_SERVICE_GROUPS } from "@/core/constants";
+import { PROSPECT_SERVICE_GROUPS } from "@/core/constants";
 import { formatCurrency } from "@/core/utils/format";
 import { createProspectWithContactAction } from "../actions/prospect.actions";
 import {
@@ -38,6 +38,8 @@ interface UserOption {
 interface Props {
   users: UserOption[];
   currentUserId: string;
+  contactOrigins: ReadonlyArray<{ value: string; label: string }>;
+  defaultOrigin: string;
 }
 
 const PRIORITY_BUTTONS = [
@@ -65,7 +67,12 @@ function toDateTimeLocalDefault(): string {
   return new Date(d.getTime() - tz).toISOString().slice(0, 16);
 }
 
-export function ProspectCreateForm({ users, currentUserId }: Props) {
+export function ProspectCreateForm({
+  users,
+  currentUserId,
+  contactOrigins,
+  defaultOrigin,
+}: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -75,7 +82,7 @@ export function ProspectCreateForm({ users, currentUserId }: Props) {
       fullName: "",
       phone: "",
       email: "",
-      origin: "WHATSAPP",
+      origin: defaultOrigin,
       serviceOfInterest: "",
       estimatedValue: undefined,
       priority: "MEDIA",
@@ -130,12 +137,12 @@ export function ProspectCreateForm({ users, currentUserId }: Props) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-slate-500">
-        <Link href="/pipeline" className="hover:text-slate-700">
+      <div className="flex items-center gap-2 text-sm text-theme-muted">
+        <Link href="/pipeline" className="hover:text-theme-secondary">
           Comercial
         </Link>
         <ChevronRight className="w-3.5 h-3.5" />
-        <Link href="/pipeline" className="hover:text-slate-700">
+        <Link href="/pipeline" className="hover:text-theme-secondary">
           Pipeline
         </Link>
         <ChevronRight className="w-3.5 h-3.5" />
@@ -148,8 +155,8 @@ export function ProspectCreateForm({ users, currentUserId }: Props) {
           {/* Información del Contacto */}
           <section className="crm-card p-5">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="font-semibold text-slate-800 flex items-center gap-2">
-                <User className="w-4 h-4 text-slate-500" />
+              <h2 className="font-semibold text-theme-primary flex items-center gap-2">
+                <User className="w-4 h-4 text-theme-muted" />
                 Información del Contacto
               </h2>
               <span className="text-xs font-semibold bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full">
@@ -167,7 +174,7 @@ export function ProspectCreateForm({ users, currentUserId }: Props) {
                     placeholder="Ej. Juan Pérez García"
                     className="pr-9"
                   />
-                  <User className="w-4 h-4 text-slate-300 absolute right-3 top-2.5" />
+                  <User className="w-4 h-4 text-theme-muted/50 absolute right-3 top-2.5" />
                 </div>
                 {errors.fullName && (
                   <p className="text-xs text-red-600 mt-1">{errors.fullName.message}</p>
@@ -184,7 +191,7 @@ export function ProspectCreateForm({ users, currentUserId }: Props) {
                       placeholder="+52 (55) 1234 5678"
                       className="pr-9"
                     />
-                    <Phone className="w-4 h-4 text-slate-300 absolute right-3 top-2.5" />
+                    <Phone className="w-4 h-4 text-theme-muted/50 absolute right-3 top-2.5" />
                   </div>
                   {errors.phone && (
                     <p className="text-xs text-red-600 mt-1">{errors.phone.message}</p>
@@ -201,7 +208,7 @@ export function ProspectCreateForm({ users, currentUserId }: Props) {
                       placeholder="juan.perez@ejemplo.com"
                       className="pr-9"
                     />
-                    <AtSign className="w-4 h-4 text-slate-300 absolute right-3 top-2.5" />
+                    <AtSign className="w-4 h-4 text-theme-muted/50 absolute right-3 top-2.5" />
                   </div>
                   {errors.email && (
                     <p className="text-xs text-red-600 mt-1">{errors.email.message}</p>
@@ -217,7 +224,7 @@ export function ProspectCreateForm({ users, currentUserId }: Props) {
                     {...register("origin")}
                     className="crm-select"
                   >
-                    {CONTACT_ORIGINS.map((o) => (
+                    {contactOrigins.map((o) => (
                       <option key={o.value} value={o.value}>
                         {o.label}
                       </option>
@@ -238,7 +245,7 @@ export function ProspectCreateForm({ users, currentUserId }: Props) {
                           className={`flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md border text-xs font-medium transition-colors ${
                             active
                               ? "border-blue-300 bg-blue-50 text-blue-700"
-                              : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                              : "border-theme bg-[var(--color-bg-card)] text-theme-secondary hover:bg-[var(--color-bg-hover)]"
                           }`}
                         >
                           <span className={`w-1.5 h-1.5 rounded-full ${p.dot}`} />
@@ -254,8 +261,8 @@ export function ProspectCreateForm({ users, currentUserId }: Props) {
 
           {/* Detalles de la Oportunidad */}
           <section className="crm-card p-5">
-            <h2 className="font-semibold text-slate-800 mb-5 flex items-center gap-2">
-              <FileText className="w-4 h-4 text-slate-500" />
+            <h2 className="font-semibold text-theme-primary mb-5 flex items-center gap-2">
+              <FileText className="w-4 h-4 text-theme-muted" />
               Detalles de la oportunidad
             </h2>
 
@@ -289,7 +296,7 @@ export function ProspectCreateForm({ users, currentUserId }: Props) {
                 <div>
                   <Label htmlFor="estimatedValue">Valor estimado (MXN)</Label>
                   <div className="relative">
-                    <span className="absolute left-3 top-2 text-slate-400 text-sm">$</span>
+                    <span className="absolute left-3 top-2 text-theme-muted text-sm">$</span>
                     <Input
                       id="estimatedValue"
                       type="number"
@@ -391,7 +398,7 @@ export function ProspectCreateForm({ users, currentUserId }: Props) {
                   className="crm-select !bg-white/10 !border-white/20 !text-white [color-scheme:dark]"
                 >
                   {REMINDER_OPTIONS.map((r) => (
-                    <option key={r.value} value={r.value} className="text-slate-800">
+                    <option key={r.value} value={r.value} className="text-theme-primary">
                       {r.label}
                     </option>
                   ))}
@@ -402,18 +409,18 @@ export function ProspectCreateForm({ users, currentUserId }: Props) {
 
           {/* Resumen */}
           <section className="crm-card p-5">
-            <h2 className="font-semibold text-slate-800 mb-4">Resumen</h2>
+            <h2 className="font-semibold text-theme-primary mb-4">Resumen</h2>
 
             <div className="space-y-3 mb-5">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-500">Potencial</span>
-                <span className="text-sm font-semibold text-slate-800">
+                <span className="text-sm text-theme-muted">Potencial</span>
+                <span className="text-sm font-semibold text-theme-primary">
                   {formatCurrency(estimatedNumber)} MXN
                 </span>
               </div>
 
               <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-500">Calificación</span>
+                <span className="text-sm text-theme-muted">Calificación</span>
                 <div className="flex items-center gap-0.5">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
@@ -427,7 +434,7 @@ export function ProspectCreateForm({ users, currentUserId }: Props) {
                         className={`w-4 h-4 ${
                           star <= (rating ?? 0)
                             ? "fill-amber-400 text-amber-400"
-                            : "text-slate-300"
+                            : "text-theme-muted/50"
                         }`}
                       />
                     </button>
@@ -447,12 +454,12 @@ export function ProspectCreateForm({ users, currentUserId }: Props) {
 
             <Link
               href="/pipeline"
-              className="w-full mt-2 h-10 flex items-center justify-center text-sm text-slate-600 border border-slate-200 rounded-md hover:bg-slate-50 transition-colors"
+              className="w-full mt-2 h-10 flex items-center justify-center text-sm text-theme-secondary border border-theme rounded-md hover:bg-[var(--color-bg-hover)] transition-colors"
             >
               Cancelar
             </Link>
 
-            <p className="text-[11px] text-slate-400 text-center mt-3 leading-relaxed">
+            <p className="text-[11px] text-theme-muted text-center mt-3 leading-relaxed">
               Al crear, se generará automáticamente el contacto (tipo prospecto) y el
               evento de próxima acción en tu calendario.
               {nextActionType === "LLAMADA" && (

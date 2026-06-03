@@ -14,6 +14,7 @@ import {
   POLICY_TYPES,
   VEHICLE_SERVICE_TYPES,
 } from "@/core/constants";
+import { requireTenantSession } from "@/core/tenant";
 import {
   EXPIRY_BADGE_CLASS,
   getExpiryInfo,
@@ -53,7 +54,7 @@ const STATUS_BADGE: Record<string, string> = {
   PENDING: "bg-amber-100 text-amber-700",
   IN_PROGRESS: "bg-blue-100 text-blue-700",
   COMPLETED: "bg-emerald-100 text-emerald-700",
-  CANCELLED: "bg-slate-100 text-slate-600",
+  CANCELLED: "bg-[var(--color-bg-elevated)] text-theme-secondary",
   ACTIVE: "bg-emerald-100 text-emerald-700",
   EXPIRED: "bg-red-100 text-red-700",
   RENEWAL: "bg-purple-100 text-purple-700",
@@ -75,13 +76,14 @@ function label(list: ReadonlyArray<{ value: string; label: string }>, value: str
 export default async function ServicesPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const tab: Tab = (params.tab as Tab) ?? "policies";
-  const overview = await servicesAggregator.getOverview();
+  const { tenantId } = await requireTenantSession();
+  const overview = await servicesAggregator.getOverview(tenantId);
 
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-bold text-slate-800">Servicios</h1>
-        <p className="text-sm text-slate-500 mt-0.5">
+        <h1 className="text-2xl font-bold text-theme-primary">Servicios</h1>
+        <p className="text-sm text-theme-muted mt-0.5">
           Seguros, asesorías de pensión y trámites vehiculares
         </p>
       </div>
@@ -130,7 +132,7 @@ export default async function ServicesPage({ searchParams }: PageProps) {
               className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                 active
                   ? "bg-blue-600 text-white shadow-sm"
-                  : "bg-white border border-slate-200 text-slate-600 hover:border-blue-300"
+                  : "bg-[var(--color-bg-card)] border border-theme text-theme-secondary hover:border-blue-300"
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
@@ -141,9 +143,9 @@ export default async function ServicesPage({ searchParams }: PageProps) {
       </div>
 
       {/* Panel del tab */}
-      {tab === "policies" && <PoliciesPanel searchParams={params} />}
-      {tab === "pensions" && <PensionsPanel searchParams={params} />}
-      {tab === "vehicles" && <VehiclesPanel searchParams={params} />}
+      {tab === "policies" && <PoliciesPanel tenantId={tenantId} searchParams={params} />}
+      {tab === "pensions" && <PensionsPanel tenantId={tenantId} searchParams={params} />}
+      {tab === "vehicles" && <VehiclesPanel tenantId={tenantId} searchParams={params} />}
     </div>
   );
 }
@@ -168,8 +170,8 @@ function KpiCard({
           <Icon className={`w-5 h-5 ${accent}`} />
         </div>
         <div>
-          <p className="text-xs text-slate-500">{label}</p>
-          <p className="text-2xl font-bold text-slate-800">{value}</p>
+          <p className="text-xs text-theme-muted">{label}</p>
+          <p className="text-2xl font-bold text-theme-primary">{value}</p>
         </div>
       </div>
     </div>
@@ -177,8 +179,10 @@ function KpiCard({
 }
 
 async function PoliciesPanel({
+  tenantId,
   searchParams,
 }: {
+  tenantId: string;
   searchParams: Record<string, string | undefined>;
 }) {
   const filters = policiesFiltersSchema.parse({
@@ -188,11 +192,11 @@ async function PoliciesPanel({
     page: searchParams.page ?? "1",
     pageSize: "10",
   });
-  const list = await policyService.list(filters);
+  const list = await policyService.list(tenantId, filters);
 
   return (
     <div className="crm-card overflow-hidden">
-      <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-3">
+      <div className="px-5 py-4 border-b border-theme-subtle flex items-center gap-3">
         <span className="text-sm font-medium text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
           {list.total} pólizas
         </span>
@@ -202,7 +206,7 @@ async function PoliciesPanel({
             name="search"
             defaultValue={searchParams.search ?? ""}
             placeholder="Buscar..."
-            className="h-9 px-3 text-sm border border-slate-200 rounded-md bg-slate-50"
+            className="h-9 px-3 text-sm border border-theme rounded-md bg-[var(--color-bg-input)]"
           />
           <select
             name="type"
@@ -235,7 +239,7 @@ async function PoliciesPanel({
       </div>
 
       {list.items.length === 0 ? (
-        <div className="p-12 text-center text-sm text-slate-400">
+        <div className="p-12 text-center text-sm text-theme-muted">
           No hay pólizas con los filtros actuales.
         </div>
       ) : (
@@ -257,25 +261,25 @@ async function PoliciesPanel({
                   ? "EXPIRED"
                   : p.status;
               return (
-                <tr key={p.id} className="border-t border-slate-50">
+                <tr key={p.id} className="border-t border-theme-subtle">
                   <td className="px-5 py-3">
-                    <p className="text-sm font-mono text-slate-700">{p.policyNumber}</p>
-                    {p.plan && <p className="text-xs text-slate-400">{p.plan}</p>}
+                    <p className="text-sm font-mono text-theme-secondary">{p.policyNumber}</p>
+                    {p.plan && <p className="text-xs text-theme-muted">{p.plan}</p>}
                   </td>
                   <td className="px-5 py-3">
                     <Link
                       href={`/contacts/${p.contact.id}`}
-                      className="text-sm font-semibold text-slate-800 hover:text-blue-600"
+                      className="text-sm font-semibold text-theme-primary hover:text-blue-600"
                     >
                       {p.contact.fullName}
                     </Link>
-                    <p className="text-xs text-slate-400 font-mono">{p.contact.code}</p>
+                    <p className="text-xs text-theme-muted font-mono">{p.contact.code}</p>
                   </td>
-                  <td className="px-5 py-3 text-sm text-slate-600">
+                  <td className="px-5 py-3 text-sm text-theme-secondary">
                     {label(POLICY_TYPES, p.type)}
                   </td>
                   <td className="px-5 py-3">
-                    <p className="text-sm text-slate-700">
+                    <p className="text-sm text-theme-secondary">
                       {formatDate(p.endDate, "dd MMM yyyy")}
                     </p>
                     {expiry && effectiveStatus !== "CANCELLED" && expiry.level !== "ok" && (
@@ -286,9 +290,9 @@ async function PoliciesPanel({
                       </span>
                     )}
                   </td>
-                  <td className="px-5 py-3 text-sm text-slate-700">
+                  <td className="px-5 py-3 text-sm text-theme-secondary">
                     {formatCurrency(Number(p.premium.toString()))}
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-theme-muted">
                       {label(PAYMENT_FREQUENCIES, p.paymentFrequency)}
                     </p>
                   </td>
@@ -296,7 +300,7 @@ async function PoliciesPanel({
                     <div className="flex items-center gap-2">
                       <span
                         className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                          STATUS_BADGE[effectiveStatus] ?? "bg-slate-100 text-slate-600"
+                          STATUS_BADGE[effectiveStatus] ?? "bg-[var(--color-bg-elevated)] text-theme-secondary"
                         }`}
                       >
                         {POLICY_STATUS_LABELS[effectiveStatus] ?? effectiveStatus}
@@ -354,8 +358,10 @@ async function PoliciesPanel({
 }
 
 async function PensionsPanel({
+  tenantId,
   searchParams,
 }: {
+  tenantId: string;
   searchParams: Record<string, string | undefined>;
 }) {
   const filters = pensionsFiltersSchema.parse({
@@ -365,11 +371,11 @@ async function PensionsPanel({
     page: searchParams.page ?? "1",
     pageSize: "10",
   });
-  const list = await pensionService.list(filters);
+  const list = await pensionService.list(tenantId, filters);
 
   return (
     <div className="crm-card overflow-hidden">
-      <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-3">
+      <div className="px-5 py-4 border-b border-theme-subtle flex items-center gap-3">
         <span className="text-sm font-medium text-purple-600 bg-purple-50 px-3 py-1 rounded-full">
           {list.total} pensiones
         </span>
@@ -379,7 +385,7 @@ async function PensionsPanel({
             name="search"
             defaultValue={searchParams.search ?? ""}
             placeholder="Buscar..."
-            className="h-9 px-3 text-sm border border-slate-200 rounded-md bg-slate-50"
+            className="h-9 px-3 text-sm border border-theme rounded-md bg-[var(--color-bg-input)]"
           />
           <select
             name="requestType"
@@ -412,7 +418,7 @@ async function PensionsPanel({
       </div>
 
       {list.items.length === 0 ? (
-        <div className="p-12 text-center text-sm text-slate-400">
+        <div className="p-12 text-center text-sm text-theme-muted">
           No hay servicios de pensión.
         </div>
       ) : (
@@ -428,32 +434,32 @@ async function PensionsPanel({
           </thead>
           <tbody>
             {list.items.map((p) => (
-              <tr key={p.id} className="border-t border-slate-50">
+              <tr key={p.id} className="border-t border-theme-subtle">
                 <td className="px-5 py-3">
                   <Link
                     href={`/contacts/${p.contact.id}`}
-                    className="text-sm font-semibold text-slate-800 hover:text-blue-600"
+                    className="text-sm font-semibold text-theme-primary hover:text-blue-600"
                   >
                     {p.contact.fullName}
                   </Link>
-                  <p className="text-xs text-slate-400 font-mono">{p.contact.code}</p>
+                  <p className="text-xs text-theme-muted font-mono">{p.contact.code}</p>
                 </td>
-                <td className="px-5 py-3 text-sm text-slate-600">
+                <td className="px-5 py-3 text-sm text-theme-secondary">
                   {label(PENSION_REQUEST_TYPES, p.requestType)}
                 </td>
-                <td className="px-5 py-3 text-sm text-slate-600">
+                <td className="px-5 py-3 text-sm text-theme-secondary">
                   {p.pensionLaw ? label(PENSION_LAWS, p.pensionLaw) : "—"}
                 </td>
-                <td className="px-5 py-3 text-sm text-slate-700">
+                <td className="px-5 py-3 text-sm text-theme-secondary">
                   {formatDate(p.requestDate, "dd MMM yyyy")}
                 </td>
-                <td className="px-5 py-3 text-sm text-slate-700">
+                <td className="px-5 py-3 text-sm text-theme-secondary">
                   {formatCurrency(Number(p.cost.toString()))}
                 </td>
                 <td className="px-5 py-3">
                   <span
                     className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                      STATUS_BADGE[p.status] ?? "bg-slate-100 text-slate-600"
+                      STATUS_BADGE[p.status] ?? "bg-[var(--color-bg-elevated)] text-theme-secondary"
                     }`}
                   >
                     {STATUS_LABELS[p.status]}
@@ -477,8 +483,10 @@ async function PensionsPanel({
 }
 
 async function VehiclesPanel({
+  tenantId,
   searchParams,
 }: {
+  tenantId: string;
   searchParams: Record<string, string | undefined>;
 }) {
   const filters = vehiclesFiltersSchema.parse({
@@ -488,11 +496,11 @@ async function VehiclesPanel({
     page: searchParams.page ?? "1",
     pageSize: "10",
   });
-  const list = await vehicleService.list(filters);
+  const list = await vehicleService.list(tenantId, filters);
 
   return (
     <div className="crm-card overflow-hidden">
-      <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-3">
+      <div className="px-5 py-4 border-b border-theme-subtle flex items-center gap-3">
         <span className="text-sm font-medium text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
           {list.total} trámites
         </span>
@@ -502,7 +510,7 @@ async function VehiclesPanel({
             name="search"
             defaultValue={searchParams.search ?? ""}
             placeholder="Buscar..."
-            className="h-9 px-3 text-sm border border-slate-200 rounded-md bg-slate-50"
+            className="h-9 px-3 text-sm border border-theme rounded-md bg-[var(--color-bg-input)]"
           />
           <select
             name="serviceType"
@@ -535,7 +543,7 @@ async function VehiclesPanel({
       </div>
 
       {list.items.length === 0 ? (
-        <div className="p-12 text-center text-sm text-slate-400">
+        <div className="p-12 text-center text-sm text-theme-muted">
           No hay trámites vehiculares.
         </div>
       ) : (
@@ -551,30 +559,30 @@ async function VehiclesPanel({
           </thead>
           <tbody>
             {list.items.map((v) => (
-              <tr key={v.id} className="border-t border-slate-50">
+              <tr key={v.id} className="border-t border-theme-subtle">
                 <td className="px-5 py-3">
                   <Link
                     href={`/contacts/${v.contact.id}`}
-                    className="text-sm font-semibold text-slate-800 hover:text-blue-600"
+                    className="text-sm font-semibold text-theme-primary hover:text-blue-600"
                   >
                     {v.contact.fullName}
                   </Link>
-                  <p className="text-xs text-slate-400 font-mono">{v.contact.code}</p>
+                  <p className="text-xs text-theme-muted font-mono">{v.contact.code}</p>
                 </td>
-                <td className="px-5 py-3 text-sm text-slate-600">
+                <td className="px-5 py-3 text-sm text-theme-secondary">
                   {label(VEHICLE_SERVICE_TYPES, v.serviceType)}
                 </td>
-                <td className="px-5 py-3 text-sm text-slate-700 flex items-center gap-1.5">
-                  <Calendar className="w-3 h-3 text-slate-400" />
+                <td className="px-5 py-3 text-sm text-theme-secondary flex items-center gap-1.5">
+                  <Calendar className="w-3 h-3 text-theme-muted" />
                   {formatDate(v.startDate, "dd MMM yyyy")}
                 </td>
-                <td className="px-5 py-3 text-sm text-slate-700">
+                <td className="px-5 py-3 text-sm text-theme-secondary">
                   {v.quote ? formatCurrency(Number(v.quote.toString())) : "—"}
                 </td>
                 <td className="px-5 py-3">
                   <span
                     className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                      STATUS_BADGE[v.status] ?? "bg-slate-100 text-slate-600"
+                      STATUS_BADGE[v.status] ?? "bg-[var(--color-bg-elevated)] text-theme-secondary"
                     }`}
                   >
                     {STATUS_LABELS[v.status]}
@@ -627,8 +635,8 @@ function ServerPagination({
   const pages = Array.from({ length: windowEnd - windowStart + 1 }, (_, i) => windowStart + i);
 
   return (
-    <div className="flex items-center justify-between px-5 py-4 border-t border-slate-100">
-      <p className="text-xs text-slate-400">
+    <div className="flex items-center justify-between px-5 py-4 border-t border-theme-subtle">
+      <p className="text-xs text-theme-muted">
         Mostrando {start}–{end} de {total}
       </p>
       <div className="flex items-center gap-1">
@@ -639,7 +647,7 @@ function ServerPagination({
             className={`w-7 h-7 flex items-center justify-center rounded text-xs font-medium ${
               n === page
                 ? "bg-blue-600 text-white"
-                : "hover:bg-slate-100 text-slate-600"
+                : "hover:bg-[var(--color-bg-hover)] text-theme-secondary"
             }`}
           >
             {n}

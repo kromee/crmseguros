@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { requireTenantSession } from "@/core/tenant";
 import { prisma } from "@/infrastructure/prisma/client";
 import { CalendarMonthView } from "@/modules/calendar/components/calendar-month-view";
 import { eventService } from "@/modules/calendar/services/event.service";
@@ -12,8 +12,7 @@ interface PageProps {
 }
 
 export default async function CalendarPage({ searchParams }: PageProps) {
-  const session = await auth();
-  if (!session?.user) return null;
+  const { tenantId, userId } = await requireTenantSession();
 
   const params = await searchParams;
   const now = new Date();
@@ -23,15 +22,16 @@ export default async function CalendarPage({ searchParams }: PageProps) {
   const focusEventId = params.event ?? null;
 
   const [events, autoEvents, contacts, users] = await Promise.all([
-    eventService.listMonth(null, year, month, contactId),
-    contactId ? Promise.resolve([]) : autoEventsService.getForMonth(year, month),
+    eventService.listMonth(tenantId, null, year, month, contactId),
+    contactId ? Promise.resolve([]) : autoEventsService.getForMonth(tenantId, year, month),
     prisma.contact.findMany({
+      where: { tenantId },
       orderBy: { fullName: "asc" },
       select: { id: true, code: true, fullName: true },
       take: 500,
     }),
     prisma.user.findMany({
-      where: { isActive: true },
+      where: { tenantId, isActive: true },
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),
@@ -46,8 +46,8 @@ export default async function CalendarPage({ searchParams }: PageProps) {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-bold text-slate-800">Calendario operativo</h1>
-        <p className="text-sm text-slate-500 mt-0.5">
+        <h1 className="text-2xl font-bold text-theme-primary">Calendario operativo</h1>
+        <p className="text-sm text-theme-muted mt-0.5">
           {filterContact
             ? `Eventos de ${filterContact.fullName}`
             : "Renovaciones, cobranza, llamadas y tareas del equipo"}
@@ -75,7 +75,7 @@ export default async function CalendarPage({ searchParams }: PageProps) {
         autoEvents={autoEvents}
         contacts={contacts}
         users={users}
-        currentUserId={session.user.id!}
+        currentUserId={userId}
         totalEvents={serialized.length + autoEvents.length}
         focusEventId={focusEventId}
       />

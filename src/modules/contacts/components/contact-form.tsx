@@ -87,6 +87,7 @@ interface Props {
   mode: "create" | "edit";
   contactId?: string;
   defaultValues?: Partial<FormValues>;
+  contactOrigins?: ReadonlyArray<{ value: string; label: string }>;
 }
 
 const TYPES = [
@@ -119,7 +120,12 @@ function toDateTimeLocalDefault(): string {
   return new Date(d.getTime() - tz).toISOString().slice(0, 16);
 }
 
-export function ContactForm({ mode, contactId, defaultValues }: Props) {
+export function ContactForm({
+  mode,
+  contactId,
+  defaultValues,
+  contactOrigins = CONTACT_ORIGINS,
+}: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
@@ -174,6 +180,7 @@ export function ContactForm({ mode, contactId, defaultValues }: Props) {
     const formData = new FormData();
     formData.set("file", file);
     formData.set("subfolder", "contacts");
+    if (photo?.trim()) formData.set("replacingPath", photo.trim());
 
     setIsUploadingPhoto(true);
     try {
@@ -300,7 +307,7 @@ export function ContactForm({ mode, contactId, defaultValues }: Props) {
             type="button"
             variant="ghost"
             size="sm"
-            className="gap-1.5 text-slate-500"
+            className="gap-1.5 text-theme-muted"
           >
             <ArrowLeft className="w-4 h-4" />
             {mode === "create" ? "Añadir contacto" : "Editar contacto"}
@@ -317,8 +324,8 @@ export function ContactForm({ mode, contactId, defaultValues }: Props) {
         <div className={showProspectFields ? "lg:col-span-2 space-y-5" : "space-y-5"}>
           <div className="crm-card p-6">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="font-semibold text-slate-800">Datos generales</h2>
-              <div className="flex rounded-lg border border-slate-200 overflow-hidden">
+              <h2 className="font-semibold text-theme-primary">Datos generales</h2>
+              <div className="flex rounded-lg border border-theme overflow-hidden">
                 {TYPES.map((t) => (
                   <button
                     key={t.value}
@@ -327,7 +334,7 @@ export function ContactForm({ mode, contactId, defaultValues }: Props) {
                     className={`px-4 py-1.5 text-xs font-semibold transition-colors ${
                       type === t.value
                         ? "bg-blue-600 text-white"
-                        : "bg-white text-slate-600 hover:bg-slate-50"
+                        : "bg-[var(--color-bg-card)] text-theme-secondary hover:bg-[var(--color-bg-hover)]"
                     }`}
                   >
                     {t.label}
@@ -342,7 +349,7 @@ export function ContactForm({ mode, contactId, defaultValues }: Props) {
                 <div className="mt-2 flex items-center gap-4">
                   <Avatar className="w-16 h-16">
                     {photo && <AvatarImage src={`/api/files/${photo}`} alt="Foto del cliente" />}
-                    <AvatarFallback className="bg-slate-200 text-slate-600 text-sm font-semibold">
+                    <AvatarFallback className="bg-[var(--color-bg-elevated)] text-theme-secondary text-sm font-semibold">
                       {getInitials(watch("fullName") || "CL")}
                     </AvatarFallback>
                   </Avatar>
@@ -390,7 +397,7 @@ export function ContactForm({ mode, contactId, defaultValues }: Props) {
                     )}
                   </div>
                 </div>
-                <p className="mt-1 text-xs text-slate-400">
+                <p className="mt-1 text-xs text-theme-muted">
                   Formatos permitidos: JPG, PNG o WEBP (max 10MB).
                 </p>
               </div>
@@ -467,7 +474,7 @@ export function ContactForm({ mode, contactId, defaultValues }: Props) {
                   {...register("origin")}
                   className="crm-select"
                 >
-                  {CONTACT_ORIGINS.map((o) => (
+                  {contactOrigins.map((o) => (
                     <option key={o.value} value={o.value}>
                       {o.label}
                     </option>
@@ -505,8 +512,8 @@ export function ContactForm({ mode, contactId, defaultValues }: Props) {
           {/* Detalles de la oportunidad (solo si es PROSPECT en create) */}
           {showProspectFields && (
             <div className="crm-card p-6">
-              <h2 className="font-semibold text-slate-800 mb-5 flex items-center gap-2">
-                <FileText className="w-4 h-4 text-slate-500" />
+              <h2 className="font-semibold text-theme-primary mb-5 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-theme-muted" />
                 Detalles de la oportunidad
               </h2>
 
@@ -534,7 +541,7 @@ export function ContactForm({ mode, contactId, defaultValues }: Props) {
                 <div>
                   <Label htmlFor="estimatedValue">Valor estimado (MXN)</Label>
                   <div className="relative">
-                    <span className="absolute left-3 top-2 text-slate-400 text-sm">
+                    <span className="absolute left-3 top-2 text-theme-muted text-sm">
                       $
                     </span>
                     <Input
@@ -562,7 +569,7 @@ export function ContactForm({ mode, contactId, defaultValues }: Props) {
                           className={`flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md border text-xs font-medium transition-colors ${
                             active
                               ? "border-blue-300 bg-blue-50 text-blue-700"
-                              : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                              : "border-theme bg-[var(--color-bg-card)] text-theme-secondary hover:bg-[var(--color-bg-hover)]"
                           }`}
                         >
                           <span
@@ -642,7 +649,7 @@ export function ContactForm({ mode, contactId, defaultValues }: Props) {
                     className="crm-select !bg-white/10 !border-white/20 !text-white [color-scheme:dark]"
                   >
                     {REMINDER_OPTIONS.map((r) => (
-                      <option key={r.value} value={r.value} className="text-slate-800">
+                      <option key={r.value} value={r.value} className="text-theme-primary">
                         {r.label}
                       </option>
                     ))}
@@ -653,18 +660,18 @@ export function ContactForm({ mode, contactId, defaultValues }: Props) {
 
             {/* Resumen */}
             <section className="crm-card p-5">
-              <h2 className="font-semibold text-slate-800 mb-4">Resumen</h2>
+              <h2 className="font-semibold text-theme-primary mb-4">Resumen</h2>
 
               <div className="space-y-3 mb-5">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-500">Potencial</span>
-                  <span className="text-sm font-semibold text-slate-800">
+                  <span className="text-sm text-theme-muted">Potencial</span>
+                  <span className="text-sm font-semibold text-theme-primary">
                     {formatCurrency(estimatedNumber)} MXN
                   </span>
                 </div>
 
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-500">Calificación</span>
+                  <span className="text-sm text-theme-muted">Calificación</span>
                   <div className="flex items-center gap-0.5">
                     {[1, 2, 3, 4, 5].map((star) => {
                       const currentRating = Number(rating ?? 0);
@@ -680,7 +687,7 @@ export function ContactForm({ mode, contactId, defaultValues }: Props) {
                             className={`w-4 h-4 ${
                               star <= currentRating
                                 ? "fill-amber-400 text-amber-400"
-                                : "text-slate-300"
+                                : "text-theme-muted/50"
                             }`}
                           />
                         </button>
@@ -690,7 +697,7 @@ export function ContactForm({ mode, contactId, defaultValues }: Props) {
                 </div>
               </div>
 
-              <p className="text-[11px] text-slate-400 leading-relaxed">
+              <p className="text-[11px] text-theme-muted leading-relaxed">
                 Al crear el prospecto se generará automáticamente el contacto, una
                 actividad inicial en su bitácora y el evento de próxima acción en tu
                 calendario.

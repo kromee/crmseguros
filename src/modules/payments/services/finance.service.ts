@@ -1,7 +1,7 @@
 import { prisma } from "@/infrastructure/prisma/client";
 
 export const financeService = {
-  async getAnnualOverview(year: number) {
+  async getAnnualOverview(tenantId: string, year: number) {
     const monthlyPayments = await prisma.$queryRaw<
       Array<{ month: number; total: string; count: bigint }>
     >`
@@ -10,7 +10,8 @@ export const financeService = {
         CAST(SUM(amount) AS CHAR) as total,
         COUNT(*) as count
       FROM payments
-      WHERE status = 'CONFIRMED'
+      WHERE tenantId = ${tenantId}
+        AND status = 'CONFIRMED'
         AND YEAR(paymentDate) = ${year}
       GROUP BY MONTH(paymentDate)
       ORDER BY month
@@ -24,7 +25,8 @@ export const financeService = {
         CAST(SUM(premium) AS CHAR) as total_premium,
         COUNT(*) as count
       FROM policies
-      WHERE status = 'ACTIVE'
+      WHERE tenantId = ${tenantId}
+        AND status = 'ACTIVE'
         AND YEAR(startDate) <= ${year}
         AND YEAR(endDate) >= ${year}
       GROUP BY type
@@ -35,7 +37,8 @@ export const financeService = {
     >`
       SELECT CAST(SUM(premium) AS CHAR) as total
       FROM policies
-      WHERE status = 'ACTIVE'
+      WHERE tenantId = ${tenantId}
+        AND status = 'ACTIVE'
         AND YEAR(startDate) <= ${year}
         AND YEAR(endDate) >= ${year}
     `;
@@ -45,12 +48,14 @@ export const financeService = {
     >`
       SELECT CAST(SUM(amount) AS CHAR) as total
       FROM payments
-      WHERE status = 'CONFIRMED'
+      WHERE tenantId = ${tenantId}
+        AND status = 'CONFIRMED'
         AND YEAR(paymentDate) = ${year}
     `;
 
     const upcomingPolicies = await prisma.policy.findMany({
       where: {
+        tenantId,
         status: "ACTIVE",
         endDate: {
           gte: new Date(),
@@ -72,7 +77,7 @@ export const financeService = {
     });
 
     const recentPayments = await prisma.payment.findMany({
-      where: { status: "CONFIRMED" },
+      where: { tenantId, status: "CONFIRMED" },
       orderBy: { paymentDate: "desc" },
       take: 10,
       include: {
@@ -88,6 +93,7 @@ export const financeService = {
 
     const activePoliciesCount = await prisma.policy.count({
       where: {
+        tenantId,
         status: "ACTIVE",
         startDate: { lte: new Date(`${year}-12-31`) },
         endDate: { gte: new Date(`${year}-01-01`) },

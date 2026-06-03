@@ -7,9 +7,9 @@ import type {
 } from "../schemas/activity.schema";
 
 export const activityRepository = {
-  async findById(id: string) {
-    return prisma.activity.findUnique({
-      where: { id },
+  async findById(tenantId: string, id: string) {
+    return prisma.activity.findFirst({
+      where: { id, tenantId },
       include: {
         performer: { select: { id: true, name: true, title: true } },
         contact: { select: { id: true, code: true, fullName: true } },
@@ -17,9 +17,10 @@ export const activityRepository = {
     });
   },
 
-  async listByContact(contactId: string, type?: string) {
+  async listByContact(tenantId: string, contactId: string, type?: string) {
     return prisma.activity.findMany({
       where: {
+        tenantId,
         contactId,
         ...(type ? { type: type as never } : {}),
       },
@@ -30,8 +31,8 @@ export const activityRepository = {
     });
   },
 
-  async list(filters: ActivitiesFilters) {
-    const where: Prisma.ActivityWhereInput = {};
+  async list(tenantId: string, filters: ActivitiesFilters) {
+    const where: Prisma.ActivityWhereInput = { tenantId };
     if (filters.contactId) where.contactId = filters.contactId;
     if (filters.prospectId) where.prospectId = filters.prospectId;
     if (filters.type) where.type = filters.type;
@@ -64,10 +65,10 @@ export const activityRepository = {
     };
   },
 
-  async countByContact(contactId: string) {
+  async countByContact(tenantId: string, contactId: string) {
     const rows = await prisma.activity.groupBy({
       by: ["type"],
-      where: { contactId },
+      where: { tenantId, contactId },
       _count: { _all: true },
     });
     const byType = rows.reduce<Record<string, number>>((acc, r) => {
@@ -78,9 +79,14 @@ export const activityRepository = {
     return { total, byType };
   },
 
-  async create(input: CreateActivityInput, performedBy: string) {
+  async create(
+    tenantId: string,
+    input: CreateActivityInput,
+    performedBy: string
+  ) {
     return prisma.activity.create({
       data: {
+        tenantId,
         contactId: input.contactId,
         prospectId: input.prospectId ?? null,
         policyId: input.policyId ?? null,
@@ -97,7 +103,7 @@ export const activityRepository = {
     });
   },
 
-  async update(id: string, input: UpdateActivityInput) {
+  async update(tenantId: string, id: string, input: UpdateActivityInput) {
     const data: Prisma.ActivityUncheckedUpdateInput = {};
     if (input.type !== undefined) data.type = input.type;
     if (input.summary !== undefined) data.summary = input.summary;
@@ -111,11 +117,11 @@ export const activityRepository = {
           : Prisma.JsonNull;
     }
 
-    return prisma.activity.update({ where: { id }, data });
+    return prisma.activity.update({ where: { id, tenantId }, data });
   },
 
-  async delete(id: string) {
-    return prisma.activity.delete({ where: { id } });
+  async delete(tenantId: string, id: string) {
+    return prisma.activity.delete({ where: { id, tenantId } });
   },
 };
 

@@ -1,8 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
 import { AppError } from "@/core/errors/app-error";
+import { requireTenantSession } from "@/core/tenant";
 import { paymentService } from "../services/payment.service";
 import { createPaymentSchema } from "../schemas/payment.schema";
 
@@ -13,20 +13,18 @@ type ActionResult =
 export async function createPaymentAction(
   raw: unknown
 ): Promise<ActionResult> {
-  const session = await auth();
-  if (!session?.user) return { ok: false, error: "No autorizado" };
-
-  const parsed = createPaymentSchema.safeParse(raw);
-  if (!parsed.success) {
-    return {
-      ok: false,
-      error: "Datos inválidos",
-      fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]>,
-    };
-  }
-
   try {
-    await paymentService.create(parsed.data);
+    const session = await requireTenantSession();
+    const parsed = createPaymentSchema.safeParse(raw);
+    if (!parsed.success) {
+      return {
+        ok: false,
+        error: "Datos inválidos",
+        fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]>,
+      };
+    }
+
+    await paymentService.create(session.tenantId, parsed.data);
     revalidatePath("/services");
     revalidatePath("/contacts");
     revalidatePath("/finances");
@@ -40,13 +38,11 @@ export async function createPaymentAction(
 
 export async function deletePaymentAction(
   id: string,
-  policyId: string
+  _policyId: string
 ): Promise<ActionResult> {
-  const session = await auth();
-  if (!session?.user) return { ok: false, error: "No autorizado" };
-
   try {
-    await paymentService.delete(id);
+    const session = await requireTenantSession();
+    await paymentService.delete(session.tenantId, id);
     revalidatePath(`/contacts`);
     revalidatePath("/services");
     revalidatePath("/finances");

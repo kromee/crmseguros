@@ -3,7 +3,12 @@ import { PrismaClient } from "@prisma/client";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
+  /** Incrementar cuando cambie schema.prisma para invalidar cliente en dev */
+  prismaSchemaRev?: string;
 };
+
+/** Bump al añadir/cambiar campos en schema (evita PrismaClient stale en hot reload) */
+const PRISMA_SCHEMA_REV = "20260530120000-catalog-settings";
 
 function createPrismaClient() {
   const adapter = new PrismaMariaDb({
@@ -21,8 +26,22 @@ function createPrismaClient() {
   });
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+function getPrismaClient(): PrismaClient {
+  if (
+    process.env.NODE_ENV !== "production" &&
+    globalForPrisma.prisma &&
+    globalForPrisma.prismaSchemaRev !== PRISMA_SCHEMA_REV
+  ) {
+    void globalForPrisma.prisma.$disconnect().catch(() => {});
+    globalForPrisma.prisma = undefined;
+  }
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
+  if (!globalForPrisma.prisma) {
+    globalForPrisma.prisma = createPrismaClient();
+    globalForPrisma.prismaSchemaRev = PRISMA_SCHEMA_REV;
+  }
+
+  return globalForPrisma.prisma;
 }
+
+export const prisma = getPrismaClient();

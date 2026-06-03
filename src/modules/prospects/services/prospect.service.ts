@@ -10,13 +10,13 @@ import type {
   UpdateProspectInput,
 } from "../schemas/prospect.schema";
 
-async function generateProspectCode(): Promise<string> {
-  const next = await prospectRepository.nextCodeNumber();
+async function generateProspectCode(tenantId: string): Promise<string> {
+  const next = await prospectRepository.nextCodeNumber(tenantId);
   return `PR-${next}`;
 }
 
-async function generateContactCode(): Promise<string> {
-  const next = await contactRepository.nextCodeNumber();
+async function generateContactCode(tenantId: string): Promise<string> {
+  const next = await contactRepository.nextCodeNumber(tenantId);
   return `SM-${next}`;
 }
 
@@ -28,31 +28,32 @@ const NEXT_ACTION_TO_EVENT_TYPE: Record<string, "LLAMADA" | "TAREA"> = {
 };
 
 export const prospectService = {
-  async list(filters: ProspectsFilters) {
-    return prospectRepository.list(filters);
+  async list(tenantId: string, filters: ProspectsFilters) {
+    return prospectRepository.list(tenantId, filters);
   },
 
-  async listByStage(filters: ProspectsFilters) {
-    return prospectRepository.listByStage(filters);
+  async listByStage(tenantId: string, filters: ProspectsFilters) {
+    return prospectRepository.listByStage(tenantId, filters);
   },
 
-  async getById(id: string) {
-    const prospect = await prospectRepository.findById(id);
+  async getById(tenantId: string, id: string) {
+    const prospect = await prospectRepository.findById(tenantId, id);
     if (!prospect) throw new NotFoundError("Prospecto");
     return prospect;
   },
 
-  async getOverview() {
-    return prospectRepository.countByStage();
+  async getOverview(tenantId: string) {
+    return prospectRepository.countByStage(tenantId);
   },
 
   async createWithContact(
+    tenantId: string,
     input: CreateProspectWithContactInput,
     currentUserId: string | null
   ) {
     if (input.email) {
       const exists = await prisma.contact.findFirst({
-        where: { email: input.email },
+        where: { tenantId, email: input.email },
         select: { id: true, fullName: true },
       });
       if (exists) {
@@ -63,8 +64,8 @@ export const prospectService = {
     }
 
     const [contactCode, prospectCode] = await Promise.all([
-      generateContactCode(),
-      generateProspectCode(),
+      generateContactCode(tenantId),
+      generateProspectCode(tenantId),
     ]);
 
     const assignedUser = input.assignedTo ?? currentUserId ?? null;
@@ -73,6 +74,7 @@ export const prospectService = {
     const result = await prisma.$transaction(async (tx) => {
       const contact = await tx.contact.create({
         data: {
+          tenantId,
           code: contactCode,
           fullName: input.fullName,
           phone: input.phone,
@@ -87,6 +89,7 @@ export const prospectService = {
 
       const prospect = await tx.prospect.create({
         data: {
+          tenantId,
           code: prospectCode,
           contactId: contact.id,
           stage: "CONTACTO_INICIAL",
@@ -107,6 +110,7 @@ export const prospectService = {
         await tx.auditLog.createMany({
           data: [
             {
+              tenantId,
               userId: currentUserId,
               entity: "contacts",
               entityId: contact.id,
@@ -119,6 +123,7 @@ export const prospectService = {
               } as Prisma.InputJsonValue,
             },
             {
+              tenantId,
               userId: currentUserId,
               entity: "prospects",
               entityId: prospect.id,
@@ -135,6 +140,7 @@ export const prospectService = {
 
         await tx.activity.create({
           data: {
+            tenantId,
             contactId: contact.id,
             prospectId: prospect.id,
             type: "NOTA",
@@ -148,7 +154,6 @@ export const prospectService = {
         });
       }
 
-      // Si hay próxima acción agendada, crear un evento de calendario.
       if (hasScheduledAction && assignedUser) {
         const start = input.nextActionDate!;
         const end = new Date(start.getTime() + 30 * 60 * 1000);
@@ -157,6 +162,7 @@ export const prospectService = {
 
         await tx.calendarEvent.create({
           data: {
+            tenantId,
             title: `${input.nextActionType} a ${contact.fullName} (${prospectCode})`,
             type: eventType,
             contactId: contact.id,
@@ -183,26 +189,31 @@ export const prospectService = {
     return result;
   },
 
-  async create(input: CreateProspectInput, currentUserId: string | null) {
-    const contact = await prisma.contact.findUnique({
-      where: { id: input.contactId },
+  async create(
+    tenantId: string,
+    input: CreateProspectInput,
+    currentUserId: string | null
+  ) {
+    const contact = await prisma.contact.findFirst({
+      where: { id: input.contactId, tenantId },
       select: { id: true, type: true },
     });
     if (!contact) {
       throw new ValidationError("El contacto seleccionado no existe");
     }
 
-    const code = await generateProspectCode();
+    const code = await generateProspectCode(tenantId);
     const data: CreateProspectInput = {
       ...input,
       assignedTo: input.assignedTo ?? currentUserId,
     };
 
-    const created = await prospectRepository.create(data, code);
+    const created = await prospectRepository.create(tenantId, data, code);
 
     if (currentUserId) {
       await prisma.auditLog.create({
         data: {
+          tenantId,
           userId: currentUserId,
           entity: "prospects",
           entityId: created.id,
@@ -219,15 +230,21 @@ export const prospectService = {
     return created;
   },
 
-  async update(id: string, input: UpdateProspectInput, currentUserId: string | null) {
-    const existing = await prospectRepository.findById(id);
+  async update(
+    tenantId: string,
+    id: string,
+    input: UpdateProspectInput,
+    currentUserId: string | null
+  ) {
+    const existing = await prospectRepository.findById(tenantId, id);
     if (!existing) throw new NotFoundError("Prospecto");
 
-    const updated = await prospectRepository.update(id, input);
+    const updated = await prospectRepository.update(tenantId, id, input);
 
     if (currentUserId) {
       await prisma.auditLog.create({
         data: {
+          tenantId,
           userId: currentUserId,
           entity: "prospects",
           entityId: id,
@@ -240,15 +257,20 @@ export const prospectService = {
     return updated;
   },
 
-  async changeStage(id: string, stage: string, currentUserId: string | null) {
-    const existing = await prospectRepository.findById(id);
+  async changeStage(
+    tenantId: string,
+    id: string,
+    stage: string,
+    currentUserId: string | null
+  ) {
+    const existing = await prospectRepository.findById(tenantId, id);
     if (!existing) throw new NotFoundError("Prospecto");
 
-    const updated = await prospectRepository.updateStage(id, stage);
+    const updated = await prospectRepository.updateStage(tenantId, id, stage);
 
-    // Completar eventos pendientes del contacto vinculados a la etapa anterior
     await prisma.calendarEvent.updateMany({
       where: {
+        tenantId,
         contactId: existing.contactId,
         status: "PENDING",
       },
@@ -258,6 +280,7 @@ export const prospectService = {
     if (currentUserId) {
       await prisma.auditLog.create({
         data: {
+          tenantId,
           userId: currentUserId,
           entity: "prospects",
           entityId: id,
@@ -271,6 +294,7 @@ export const prospectService = {
 
       await prisma.activity.create({
         data: {
+          tenantId,
           contactId: existing.contactId,
           prospectId: id,
           type: "NOTA",
@@ -285,8 +309,8 @@ export const prospectService = {
     return updated;
   },
 
-  async convertToClient(id: string, currentUserId: string | null) {
-    const existing = await prospectRepository.findById(id);
+  async convertToClient(tenantId: string, id: string, currentUserId: string | null) {
+    const existing = await prospectRepository.findById(tenantId, id);
     if (!existing) throw new NotFoundError("Prospecto");
     if (existing.status === "WON") {
       throw new ValidationError("Este prospecto ya fue convertido a cliente");
@@ -294,17 +318,18 @@ export const prospectService = {
 
     await prisma.$transaction([
       prisma.contact.update({
-        where: { id: existing.contactId },
+        where: { id: existing.contactId, tenantId },
         data: { type: "CLIENT", status: "ACTIVE" },
       }),
       prisma.prospect.update({
-        where: { id },
+        where: { id, tenantId },
         data: { status: "WON", stage: "CIERRE", probability: 100 },
       }),
       ...(currentUserId
         ? [
             prisma.activity.create({
               data: {
+                tenantId,
                 contactId: existing.contactId,
                 prospectId: id,
                 type: "NOTA",
@@ -316,6 +341,7 @@ export const prospectService = {
             }),
             prisma.auditLog.create({
               data: {
+                tenantId,
                 userId: currentUserId,
                 entity: "prospects",
                 entityId: id,
@@ -333,19 +359,20 @@ export const prospectService = {
     return { contactId: existing.contactId };
   },
 
-  async markAsLost(id: string, currentUserId: string | null) {
-    const existing = await prospectRepository.findById(id);
+  async markAsLost(tenantId: string, id: string, currentUserId: string | null) {
+    const existing = await prospectRepository.findById(tenantId, id);
     if (!existing) throw new NotFoundError("Prospecto");
 
     await prisma.$transaction([
       prisma.prospect.update({
-        where: { id },
+        where: { id, tenantId },
         data: { status: "LOST", probability: 0 },
       }),
       ...(currentUserId
         ? [
             prisma.activity.create({
               data: {
+                tenantId,
                 contactId: existing.contactId,
                 prospectId: id,
                 type: "NOTA",
@@ -357,6 +384,7 @@ export const prospectService = {
             }),
             prisma.auditLog.create({
               data: {
+                tenantId,
                 userId: currentUserId,
                 entity: "prospects",
                 entityId: id,
@@ -369,15 +397,16 @@ export const prospectService = {
     ]);
   },
 
-  async remove(id: string, currentUserId: string | null) {
-    const existing = await prospectRepository.findById(id);
+  async remove(tenantId: string, id: string, currentUserId: string | null) {
+    const existing = await prospectRepository.findById(tenantId, id);
     if (!existing) throw new NotFoundError("Prospecto");
 
-    await prospectRepository.delete(id);
+    await prospectRepository.delete(tenantId, id);
 
     if (currentUserId) {
       await prisma.auditLog.create({
         data: {
+          tenantId,
           userId: currentUserId,
           entity: "prospects",
           entityId: id,

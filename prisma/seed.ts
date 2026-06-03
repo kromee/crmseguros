@@ -2,6 +2,11 @@ import "dotenv/config";
 import bcrypt from "bcryptjs";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "@prisma/client";
+import {
+  SAAS_PLAN_CATALOG,
+  SAAS_PRODUCT_CONFIG,
+  toPlanUpsertData,
+} from "../src/core/tenant/saas-catalog";
 
 const adapter = new PrismaMariaDb({
   host: process.env.DATABASE_HOST ?? "localhost",
@@ -89,23 +94,78 @@ async function main() {
   await prisma.vehicleService.deleteMany();
   await prisma.auditLog.deleteMany();
   await prisma.contact.deleteMany();
+  await prisma.subscription.deleteMany();
+  await prisma.license.deleteMany();
   await prisma.user.deleteMany();
+  await prisma.tenant.deleteMany();
+  await prisma.plan.deleteMany();
+
+  console.log("📦 Creando planes SaaS...");
+  const planRecords = await Promise.all(
+    SAAS_PLAN_CATALOG.map((p) =>
+      prisma.plan.create({
+        data: toPlanUpsertData(p),
+      })
+    )
+  );
+  const plan = planRecords.find((p) => p.slug === SAAS_PRODUCT_CONFIG.defaultPlanSlug)!;
+
+  console.log("🏢 Creando tenant Seguros Mexa...");
+  const tenant = await prisma.tenant.create({
+    data: {
+      name: "Seguros Mexa",
+      slug: "seguros-mexa",
+      slogan: "Innovando tu seguridad, protegiendo tu mañana.",
+      status: "ACTIVE",
+      planId: plan.id,
+      maxUsers: 2,
+      storageLimitMb: 5120,
+    },
+  });
+
+  const subscriptionStart = new Date();
+  const subscriptionEnd = new Date(subscriptionStart);
+  subscriptionEnd.setFullYear(subscriptionEnd.getFullYear() + 1);
+
+  await prisma.subscription.create({
+    data: {
+      tenantId: tenant.id,
+      planId: plan.id,
+      term: "ANNUAL",
+      status: "ACTIVE",
+      startsAt: subscriptionStart,
+      expiresAt: subscriptionEnd,
+    },
+  });
 
   console.log("👤 Creando usuarios...");
   const passwordHash = await bcrypt.hash("Admin123!", 10);
 
+  await prisma.user.create({
+    data: {
+      name: "Super Admin",
+      email: "superadmin@crm.local",
+      password: passwordHash,
+      role: "SUPER_ADMIN",
+      title: "Plataforma SaaS",
+      tenantId: null,
+    },
+  });
+
   const admin = await prisma.user.create({
     data: {
+      tenantId: tenant.id,
       name: "Admin Mexa",
       email: "admin@segurosmexa.com",
       password: passwordHash,
-      role: "ADMIN",
+      role: "TENANT_ADMIN",
       title: "Administrador",
     },
   });
 
   const broker = await prisma.user.create({
     data: {
+      tenantId: tenant.id,
       name: "M. Rodriguez",
       email: "m.rodriguez@segurosmexa.com",
       password: passwordHash,
@@ -116,11 +176,13 @@ async function main() {
 
   const broker2 = await prisma.user.create({
     data: {
+      tenantId: tenant.id,
       name: "L. Fernández",
       email: "l.fernandez@segurosmexa.com",
       password: passwordHash,
       role: "USER",
       title: "Asesor",
+      isActive: false,
     },
   });
 
@@ -137,6 +199,7 @@ async function main() {
 
     const contact = await prisma.contact.create({
       data: {
+        tenantId: tenant.id,
         code,
         type: isClient ? "CLIENT" : "PROSPECT",
         fullName: name,
@@ -177,6 +240,7 @@ async function main() {
 
     const policy = await prisma.policy.create({
       data: {
+        tenantId: tenant.id,
         contactId: client.id,
         policyNumber,
         type,
@@ -203,6 +267,7 @@ async function main() {
     for (let j = 0; j < numPayments; j++) {
       await prisma.payment.create({
         data: {
+          tenantId: tenant.id,
           policyId: pol.id,
           amount: Math.round(pol.premium / rand(1, 4)),
           paymentDate: pastDate(10, 300),
@@ -222,6 +287,7 @@ async function main() {
     const cost = rand(5000, 25000);
     await prisma.pensionService.create({
       data: {
+        tenantId: tenant.id,
         contactId: client.id,
         requestDate: pastDate(10, 180),
         requestType: pick(["ASESORIA", "TRAMITE", "OTRO"]),
@@ -248,6 +314,7 @@ async function main() {
     const client = contacts[rand(0, contacts.length - 1)];
     await prisma.vehicleService.create({
       data: {
+        tenantId: tenant.id,
         contactId: client.id,
         startDate: pastDate(5, 120),
         serviceType: pick(["PLACAS_NUEVAS", "ALTA", "BAJA", "RENOVACION_PLACAS", "TARJETA_CIRCULACION", "OTRO"]),
@@ -276,6 +343,7 @@ async function main() {
     const prospect = i < prospects.length ? prospects[i] : clients[rand(20, 29)];
     await prisma.prospect.create({
       data: {
+        tenantId: tenant.id,
         code: `PR-${rand(100, 999)}`,
         contactId: prospect.id,
         stage: pick(STAGES),
@@ -337,6 +405,7 @@ async function main() {
     const type = pick(ACTIVITY_TYPES);
     await prisma.activity.create({
       data: {
+        tenantId: tenant.id,
         contactId: contact.id,
         type,
         summary: pick(summaries[type]),
@@ -396,6 +465,7 @@ async function main() {
   for (const demo of demoReminders) {
     await prisma.calendarEvent.create({
       data: {
+        tenantId: tenant.id,
         title: demo.title,
         type: demo.type,
         contactId: contacts[0].id,
@@ -430,6 +500,7 @@ async function main() {
 
     await prisma.calendarEvent.create({
       data: {
+        tenantId: tenant.id,
         title: titles[type],
         type,
         contactId: contact.id,
@@ -448,7 +519,8 @@ async function main() {
   console.log("");
   console.log("✅ Seed completado exitosamente");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  console.log("   👤 Usuarios:      3");
+  console.log("   👤 Usuarios:      4 (1 super admin + 3 tenant)");
+  console.log("   🏢 Tenant:        Seguros Mexa (plan anual)");
   console.log("   📇 Contactos:     50 (30 clientes + 20 prospectos)");
   console.log("   📋 Pólizas:       40");
   console.log("   💰 Pagos:         ~60");
@@ -458,6 +530,7 @@ async function main() {
   console.log("   📝 Actividades:   80");
   console.log("   📅 Eventos:       30 (incl. 5 demo recordatorios)");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+  console.log("   superadmin@crm.local / Admin123!  (SUPER_ADMIN)");
   console.log("   admin@segurosmexa.com / Admin123!");
   console.log("   m.rodriguez@segurosmexa.com / Admin123!");
   console.log("   l.fernandez@segurosmexa.com / Admin123!");

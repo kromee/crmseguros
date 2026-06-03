@@ -8,28 +8,32 @@ import type {
   UpdateContactInput,
 } from "../schemas/contact.schema";
 
-async function generateContactCode(): Promise<string> {
-  const next = await contactRepository.nextCodeNumber();
+async function generateContactCode(tenantId: string): Promise<string> {
+  const next = await contactRepository.nextCodeNumber(tenantId);
   return `SM-${next}`;
 }
 
 export const contactService = {
-  async list(filters: ContactsFilters) {
-    return contactRepository.list(filters);
+  async list(tenantId: string, filters: ContactsFilters) {
+    return contactRepository.list(tenantId, filters);
   },
 
-  async getById(id: string) {
-    const contact = await contactRepository.findById(id);
+  async getById(tenantId: string, id: string) {
+    const contact = await contactRepository.findById(tenantId, id);
     if (!contact) {
       throw new NotFoundError("Contacto");
     }
     return contact;
   },
 
-  async create(input: CreateContactInput, currentUserId: string | null) {
+  async create(
+    tenantId: string,
+    input: CreateContactInput,
+    currentUserId: string | null
+  ) {
     if (input.email) {
       const existing = await prisma.contact.findFirst({
-        where: { email: input.email },
+        where: { tenantId, email: input.email },
         select: { id: true },
       });
       if (existing) {
@@ -37,12 +41,18 @@ export const contactService = {
       }
     }
 
-    const code = await generateContactCode();
-    const contact = await contactRepository.create(input, code, currentUserId);
+    const code = await generateContactCode(tenantId);
+    const contact = await contactRepository.create(
+      tenantId,
+      input,
+      code,
+      currentUserId
+    );
 
     if (currentUserId) {
       await prisma.auditLog.create({
         data: {
+          tenantId,
           userId: currentUserId,
           entity: "contacts",
           entityId: contact.id,
@@ -59,17 +69,23 @@ export const contactService = {
     return contact;
   },
 
-  async update(id: string, input: UpdateContactInput, currentUserId: string | null) {
-    const existing = await contactRepository.findById(id);
+  async update(
+    tenantId: string,
+    id: string,
+    input: UpdateContactInput,
+    currentUserId: string | null
+  ) {
+    const existing = await contactRepository.findById(tenantId, id);
     if (!existing) {
       throw new NotFoundError("Contacto");
     }
 
-    const updated = await contactRepository.update(id, input);
+    const updated = await contactRepository.update(tenantId, id, input);
 
     if (currentUserId) {
       await prisma.auditLog.create({
         data: {
+          tenantId,
           userId: currentUserId,
           entity: "contacts",
           entityId: id,
@@ -82,17 +98,18 @@ export const contactService = {
     return updated;
   },
 
-  async remove(id: string, currentUserId: string | null) {
-    const existing = await contactRepository.findById(id);
+  async remove(tenantId: string, id: string, currentUserId: string | null) {
+    const existing = await contactRepository.findById(tenantId, id);
     if (!existing) {
       throw new NotFoundError("Contacto");
     }
 
-    await contactRepository.delete(id);
+    await contactRepository.delete(tenantId, id);
 
     if (currentUserId) {
       await prisma.auditLog.create({
         data: {
+          tenantId,
           userId: currentUserId,
           entity: "contacts",
           entityId: id,

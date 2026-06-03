@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "NODE_OPTIONS='--max-old-space-size=2048' next dev --webpack",
+    "dev": "prisma generate && NODE_OPTIONS='--max-old-space-size=2048' next dev --webpack",
     "dev:turbo": "NODE_OPTIONS='--max-old-space-size=2048' next dev --turbopack",
     "dev:clean": "pkill -f 'next-server' 2>/dev/null; pkill -f 'next dev' 2>/dev/null; rm -rf .next node_modules/.cache && npm run dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
     "db:up": "docker compose up -d",
@@ -18,9 +18,14 @@
     "db:sync": "prisma db push && prisma generate",
     "db:seed": "prisma db seed",
     "db:seed-reminders": "tsx scripts/seed-demo-reminders.ts",
+    "db:migrate-saas": "tsx scripts/migrate-saas-0.ts",
+    "db:sync-catalog": "tsx scripts/sync-saas-catalog.ts",
+    "uploads:migrate": "tsx scripts/migrate-uploads-to-tenant.ts",
+    "backup": "bash scripts/backup.sh",
     "db:studio": "prisma studio",
     "db:setup": "npm run db:up && npm run db:wait && npm run db:migrate && npm run db:seed",
-    "db:wait": "node scripts/wait-for-mysql.js"
+    "db:wait": "node scripts/wait-for-mysql.js",
+    "propuesta:pdf": "node scripts/generate-propuesta-pdf.mjs"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

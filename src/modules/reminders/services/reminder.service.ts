@@ -28,8 +28,8 @@ function classifyReminder(
 }
 
 export const reminderService = {
-  async getQueue(userId: string): Promise<ReminderItem[]> {
-    const events = await reminderRepository.listPendingForUser(userId);
+  async getQueue(tenantId: string, userId: string): Promise<ReminderItem[]> {
+    const events = await reminderRepository.listPendingForUser(tenantId, userId);
     const now = new Date();
 
     const items: ReminderItem[] = [];
@@ -68,8 +68,8 @@ export const reminderService = {
     });
   },
 
-  async countDue(userId: string): Promise<number> {
-    const queue = await this.getQueue(userId);
+  async countDue(tenantId: string, userId: string): Promise<number> {
+    const queue = await this.getQueue(tenantId, userId);
     return queue.filter((r) => r.status === "due" || r.status === "overdue").length;
   },
 };
