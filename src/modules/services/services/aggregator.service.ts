@@ -1,7 +1,7 @@
 import { prisma } from "@/infrastructure/prisma/client";
 
 export const servicesAggregator = {
-  async getOverview() {
+  async getOverview(tenantId: string) {
     const now = new Date();
     const horizon30 = new Date();
     horizon30.setDate(horizon30.getDate() + 30);
@@ -16,20 +16,22 @@ export const servicesAggregator = {
       vehiclesTotal,
       vehiclesByStatus,
     ] = await Promise.all([
-      prisma.policy.count(),
-      prisma.policy.count({ where: { status: "ACTIVE" } }),
+      prisma.policy.count({ where: { tenantId } }),
+      prisma.policy.count({ where: { tenantId, status: "ACTIVE" } }),
       prisma.policy.count({
-        where: { status: "ACTIVE", endDate: { gte: now, lte: horizon30 } },
+        where: { tenantId, status: "ACTIVE", endDate: { gte: now, lte: horizon30 } },
       }),
-      prisma.policy.count({ where: { status: "EXPIRED" } }),
-      prisma.pensionService.count(),
+      prisma.policy.count({ where: { tenantId, status: "EXPIRED" } }),
+      prisma.pensionService.count({ where: { tenantId } }),
       prisma.pensionService.groupBy({
         by: ["status"],
+        where: { tenantId },
         _count: { _all: true },
       }),
-      prisma.vehicleService.count(),
+      prisma.vehicleService.count({ where: { tenantId } }),
       prisma.vehicleService.groupBy({
         by: ["status"],
+        where: { tenantId },
         _count: { _all: true },
       }),
     ]);
@@ -68,13 +70,14 @@ export const servicesAggregator = {
     };
   },
 
-  async getExpiringPolicies(days = 30, limit = 5) {
+  async getExpiringPolicies(tenantId: string, days = 30, limit = 5) {
     const now = new Date();
     const horizon = new Date();
     horizon.setDate(horizon.getDate() + days);
 
     return prisma.policy.findMany({
       where: {
+        tenantId,
         status: "ACTIVE",
         endDate: { gte: now, lte: horizon },
       },

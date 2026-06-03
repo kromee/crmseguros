@@ -2,8 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
 import { AppError } from "@/core/errors/app-error";
+import { requireTenantSession } from "@/core/tenant";
 import type { ActionResult } from "@/core/types/action-result";
 import {
   createContactSchema,
@@ -15,19 +15,11 @@ import { contactService } from "../services/contact.service";
 
 export type { ActionResult };
 
-async function requireUser() {
-  const session = await auth();
-  if (!session?.user?.id) {
-    throw new AppError("No autorizado", 401);
-  }
-  return session.user;
-}
-
 export async function createContactAction(
   input: CreateContactInput
 ): Promise<ActionResult<{ id: string; code: string }>> {
   try {
-    const user = await requireUser();
+    const session = await requireTenantSession();
     const parsed = createContactSchema.safeParse(input);
     if (!parsed.success) {
       return {
@@ -37,7 +29,11 @@ export async function createContactAction(
       };
     }
 
-    const contact = await contactService.create(parsed.data, user.id);
+    const contact = await contactService.create(
+      session.tenantId,
+      parsed.data,
+      session.userId
+    );
     revalidatePath("/contacts");
     return { ok: true, data: { id: contact.id, code: contact.code } };
   } catch (err) {
@@ -53,7 +49,7 @@ export async function updateContactAction(
   input: UpdateContactInput
 ): Promise<ActionResult> {
   try {
-    const user = await requireUser();
+    const session = await requireTenantSession();
     const parsed = updateContactSchema.safeParse(input);
     if (!parsed.success) {
       return {
@@ -63,7 +59,7 @@ export async function updateContactAction(
       };
     }
 
-    await contactService.update(id, parsed.data, user.id);
+    await contactService.update(session.tenantId, id, parsed.data, session.userId);
     revalidatePath("/contacts");
     revalidatePath(`/contacts/${id}`);
     return { ok: true, data: null };
@@ -77,8 +73,8 @@ export async function updateContactAction(
 
 export async function deleteContactAction(id: string): Promise<ActionResult> {
   try {
-    const user = await requireUser();
-    await contactService.remove(id, user.id);
+    const session = await requireTenantSession();
+    await contactService.remove(session.tenantId, id, session.userId);
     revalidatePath("/contacts");
     return { ok: true, data: null };
   } catch (err) {

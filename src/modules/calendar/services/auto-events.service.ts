@@ -52,7 +52,7 @@ function getPaymentDates(
 }
 
 export const autoEventsService = {
-  async getForMonth(year: number, month: number): Promise<AutoEvent[]> {
+  async getForMonth(tenantId: string, year: number, month: number): Promise<AutoEvent[]> {
     const monthStart = new Date(year, month, 1);
     const monthEnd = new Date(year, month + 1, 0, 23, 59, 59);
     const now = new Date();
@@ -62,6 +62,7 @@ export const autoEventsService = {
 
     const policies = await prisma.policy.findMany({
       where: {
+        tenantId,
         status: { in: ["ACTIVE", "RENEWAL"] },
         endDate: { gte: expandedStart, lte: expandedEnd },
       },
@@ -80,6 +81,7 @@ export const autoEventsService = {
 
     const activePolicies = await prisma.policy.findMany({
       where: {
+        tenantId,
         status: "ACTIVE",
         startDate: { lte: monthEnd },
         endDate: { gte: monthStart },

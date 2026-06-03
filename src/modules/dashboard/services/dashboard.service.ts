@@ -100,7 +100,7 @@ const STAGE_LABEL: Record<string, string> = {
 const STAGE_ORDER = ["CONTACTO_INICIAL", "SEGUIMIENTO", "COTIZACION", "CIERRE"];
 
 export const dashboardService = {
-  async getKpis(): Promise<DashboardKpi[]> {
+  async getKpis(tenantId: string): Promise<DashboardKpi[]> {
     const now = new Date();
     const weekAgo = addDays(now, -7);
     const monthStart = startOfMonth(now);
@@ -118,34 +118,35 @@ export const dashboardService = {
       totalPaymentsMonth,
       pendingEvents,
     ] = await Promise.all([
-      prisma.contact.count({ where: { type: "CLIENT", status: "ACTIVE" } }),
+      prisma.contact.count({ where: { tenantId, type: "CLIENT", status: "ACTIVE" } }),
       prisma.contact.count({
-        where: { type: "CLIENT", status: "ACTIVE", createdAt: { gte: weekAgo } },
+        where: { tenantId, type: "CLIENT", status: "ACTIVE", createdAt: { gte: weekAgo } },
       }),
-      prisma.policy.count({ where: { status: "ACTIVE", endDate: { gte: startOfDay(now) } } }),
+      prisma.policy.count({ where: { tenantId, status: "ACTIVE", endDate: { gte: startOfDay(now) } } }),
       prisma.policy.count({
         where: {
+          tenantId,
           status: "ACTIVE",
           endDate: { lt: startOfDay(now) },
           renewedBy: null,
         },
       }),
       prisma.policy.count({
-        where: { status: "ACTIVE", endDate: { gte: startOfDay(now), lte: in30 } },
+        where: { tenantId, status: "ACTIVE", endDate: { gte: startOfDay(now), lte: in30 } },
       }),
-      prisma.prospect.count({ where: { status: "ACTIVE" } }),
+      prisma.prospect.count({ where: { tenantId, status: "ACTIVE" } }),
       prisma.prospect.count({
-        where: { status: "ACTIVE", createdAt: { gte: weekAgo } },
+        where: { tenantId, status: "ACTIVE", createdAt: { gte: weekAgo } },
       }),
       prisma.prospect.count({
-        where: { status: "WON", updatedAt: { gte: monthStart } },
+        where: { tenantId, status: "WON", updatedAt: { gte: monthStart } },
       }),
       prisma.payment.aggregate({
-        where: { status: "CONFIRMED", paymentDate: { gte: monthStart } },
+        where: { tenantId, status: "CONFIRMED", paymentDate: { gte: monthStart } },
         _sum: { amount: true },
       }),
       prisma.calendarEvent.count({
-        where: { status: "PENDING", startDate: { lte: endOfDay(now) } },
+        where: { tenantId, status: "PENDING", startDate: { lte: endOfDay(now) } },
       }),
     ]);
 
@@ -191,7 +192,7 @@ export const dashboardService = {
     ];
   },
 
-  async getAllAlerts(): Promise<DashboardAlert[]> {
+  async getAllAlerts(tenantId: string): Promise<DashboardAlert[]> {
     const now = new Date();
     const in3 = addDays(now, 3);
     const in7 = addDays(now, 7);
@@ -209,7 +210,7 @@ export const dashboardService = {
       pendingPayments,
     ] = await Promise.all([
       prisma.policy.findMany({
-        where: { status: "ACTIVE", endDate: { lt: startOfDay(now) }, renewedBy: null },
+        where: { tenantId, status: "ACTIVE", endDate: { lt: startOfDay(now) }, renewedBy: null },
         orderBy: { endDate: "asc" },
         take: 20,
         select: {
@@ -218,7 +219,7 @@ export const dashboardService = {
         },
       }),
       prisma.policy.findMany({
-        where: { status: "ACTIVE", endDate: { gte: startOfDay(now), lte: in3 } },
+        where: { tenantId, status: "ACTIVE", endDate: { gte: startOfDay(now), lte: in3 } },
         orderBy: { endDate: "asc" },
         take: 10,
         select: {
@@ -227,7 +228,7 @@ export const dashboardService = {
         },
       }),
       prisma.policy.findMany({
-        where: { status: "ACTIVE", endDate: { gt: in3, lte: in30 } },
+        where: { tenantId, status: "ACTIVE", endDate: { gt: in3, lte: in30 } },
         orderBy: { endDate: "asc" },
         take: 10,
         select: {
@@ -237,6 +238,7 @@ export const dashboardService = {
       }),
       prisma.prospect.findMany({
         where: {
+          tenantId,
           status: "ACTIVE",
           updatedAt: { lt: daysAgo15 },
         },
@@ -249,6 +251,7 @@ export const dashboardService = {
       }),
       prisma.prospect.findMany({
         where: {
+          tenantId,
           status: "ACTIVE",
           nextActionDate: { lt: startOfDay(now) },
         },
@@ -261,6 +264,7 @@ export const dashboardService = {
       }),
       prisma.contact.findMany({
         where: {
+          tenantId,
           type: "CLIENT",
           status: "ACTIVE",
           activities: { none: { createdAt: { gte: daysAgo7 } } },
@@ -270,7 +274,7 @@ export const dashboardService = {
         select: { id: true, fullName: true, code: true },
       }),
       prisma.payment.findMany({
-        where: { status: "PENDING" },
+        where: { tenantId, status: "PENDING" },
         orderBy: { paymentDate: "asc" },
         take: 10,
         select: {
@@ -372,9 +376,10 @@ export const dashboardService = {
     return alerts;
   },
 
-  async getTodayAgenda(userId: string): Promise<AgendaItem[]> {
+  async getTodayAgenda(tenantId: string, userId: string): Promise<AgendaItem[]> {
     const events = await prisma.calendarEvent.findMany({
       where: {
+        tenantId,
         userId,
         startDate: { gte: startOfDay(), lte: endOfDay() },
       },
@@ -397,8 +402,9 @@ export const dashboardService = {
     }));
   },
 
-  async getRecentActivity(limit = 15): Promise<RecentActivityRow[]> {
+  async getRecentActivity(tenantId: string, limit = 15): Promise<RecentActivityRow[]> {
     const rows = await prisma.activity.findMany({
+      where: { tenantId },
       orderBy: { createdAt: "desc" },
       take: limit,
       include: {
@@ -419,7 +425,7 @@ export const dashboardService = {
     }));
   },
 
-  async getPipelineProgress(): Promise<{
+  async getPipelineProgress(tenantId: string): Promise<{
     stages: PipelineStageMetric[];
     activeStage: string;
     projectedRevenue: number;
@@ -429,12 +435,12 @@ export const dashboardService = {
     const [rows, totalConverted, totalCreated] = await Promise.all([
       prisma.prospect.groupBy({
         by: ["stage"],
-        where: { status: "ACTIVE" },
+        where: { tenantId, status: "ACTIVE" },
         _count: { _all: true },
         _sum: { estimatedValue: true },
       }),
-      prisma.prospect.count({ where: { status: "WON" } }),
-      prisma.prospect.count(),
+      prisma.prospect.count({ where: { tenantId, status: "WON" } }),
+      prisma.prospect.count({ where: { tenantId } }),
     ]);
 
     const byStage = new Map(rows.map((r) => [r.stage, r]));
@@ -463,7 +469,7 @@ export const dashboardService = {
     };
   },
 
-  async getPortfolioSummary(): Promise<PortfolioSummary> {
+  async getPortfolioSummary(tenantId: string): Promise<PortfolioSummary> {
     const now = new Date();
     const monthStart = startOfMonth(now);
 
@@ -475,9 +481,10 @@ export const dashboardService = {
       renewedThisMonth,
       expiredThisMonth,
     ] = await Promise.all([
-      prisma.policy.count({ where: { status: "ACTIVE", endDate: { gte: startOfDay(now) } } }),
+      prisma.policy.count({ where: { tenantId, status: "ACTIVE", endDate: { gte: startOfDay(now) } } }),
       prisma.policy.count({
         where: {
+          tenantId,
           OR: [
             { status: "EXPIRED" },
             { status: "ACTIVE", endDate: { lt: startOfDay(now) } },
@@ -485,18 +492,19 @@ export const dashboardService = {
         },
       }),
       prisma.policy.aggregate({
-        where: { status: "ACTIVE", endDate: { gte: startOfDay(now) } },
+        where: { tenantId, status: "ACTIVE", endDate: { gte: startOfDay(now) } },
         _sum: { premium: true },
       }),
       prisma.payment.aggregate({
-        where: { status: "CONFIRMED" },
+        where: { tenantId, status: "CONFIRMED" },
         _sum: { amount: true },
       }),
       prisma.policy.count({
-        where: { renewedFromId: { not: null }, createdAt: { gte: monthStart } },
+        where: { tenantId, renewedFromId: { not: null }, createdAt: { gte: monthStart } },
       }),
       prisma.policy.count({
         where: {
+          tenantId,
           status: "ACTIVE",
           endDate: { gte: monthStart, lt: startOfDay(now) },
           renewedBy: null,
@@ -524,14 +532,14 @@ export const dashboardService = {
     };
   },
 
-  async getAll(userId: string) {
+  async getAll(tenantId: string, userId: string) {
     const [kpis, alerts, agenda, activity, pipeline, portfolio] = await Promise.all([
-      this.getKpis(),
-      this.getAllAlerts(),
-      this.getTodayAgenda(userId),
-      this.getRecentActivity(15),
-      this.getPipelineProgress(),
-      this.getPortfolioSummary(),
+      this.getKpis(tenantId),
+      this.getAllAlerts(tenantId),
+      this.getTodayAgenda(tenantId, userId),
+      this.getRecentActivity(tenantId, 15),
+      this.getPipelineProgress(tenantId),
+      this.getPortfolioSummary(tenantId),
     ]);
     return { kpis, alerts, agenda, activity, pipeline, portfolio };
   },

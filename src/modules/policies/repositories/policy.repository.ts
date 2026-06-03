@@ -7,22 +7,24 @@ import type {
 } from "../schemas/policy.schema";
 
 export const policyRepository = {
-  async findById(id: string) {
-    return prisma.policy.findUnique({
-      where: { id },
+  async findById(tenantId: string, id: string) {
+    return prisma.policy.findFirst({
+      where: { id, tenantId },
       include: {
         contact: { select: { id: true, code: true, fullName: true } },
       },
     });
   },
 
-  async findByPolicyNumber(policyNumber: string) {
-    return prisma.policy.findUnique({ where: { policyNumber } });
+  async findByPolicyNumber(tenantId: string, policyNumber: string) {
+    return prisma.policy.findUnique({
+      where: { tenantId_policyNumber: { tenantId, policyNumber } },
+    });
   },
 
-  async listByContact(contactId: string) {
+  async listByContact(tenantId: string, contactId: string) {
     return prisma.policy.findMany({
-      where: { contactId },
+      where: { tenantId, contactId },
       orderBy: [{ status: "asc" }, { endDate: "desc" }],
       include: {
         renewedBy: {
@@ -32,8 +34,8 @@ export const policyRepository = {
     });
   },
 
-  async list(filters: PoliciesFilters) {
-    const where: Prisma.PolicyWhereInput = {};
+  async list(tenantId: string, filters: PoliciesFilters) {
+    const where: Prisma.PolicyWhereInput = { tenantId };
 
     if (filters.contactId) where.contactId = filters.contactId;
     if (filters.type) where.type = filters.type;
@@ -85,9 +87,10 @@ export const policyRepository = {
     };
   },
 
-  async create(input: CreatePolicyInput) {
+  async create(tenantId: string, input: CreatePolicyInput) {
     return prisma.policy.create({
       data: {
+        tenantId,
         contactId: input.contactId,
         policyNumber: input.policyNumber,
         type: input.type,
@@ -110,9 +113,9 @@ export const policyRepository = {
     });
   },
 
-  async update(id: string, input: UpdatePolicyInput) {
+  async update(tenantId: string, id: string, input: UpdatePolicyInput) {
     return prisma.policy.update({
-      where: { id },
+      where: { id, tenantId },
       data: {
         ...(input.policyNumber !== undefined && { policyNumber: input.policyNumber }),
         ...(input.type !== undefined && { type: input.type }),
@@ -145,13 +148,14 @@ export const policyRepository = {
     });
   },
 
-  async delete(id: string) {
-    return prisma.policy.delete({ where: { id } });
+  async delete(tenantId: string, id: string) {
+    return prisma.policy.delete({ where: { id, tenantId } });
   },
 
-  async countByStatus() {
+  async countByStatus(tenantId: string) {
     const rows = await prisma.policy.groupBy({
       by: ["status"],
+      where: { tenantId },
       _count: { _all: true },
     });
     return rows.reduce<Record<string, number>>((acc, r) => {

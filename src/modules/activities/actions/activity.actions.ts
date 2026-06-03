@@ -1,8 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
 import { AppError } from "@/core/errors/app-error";
+import { requireTenantSession } from "@/core/tenant";
+import { isTenantAdmin } from "@/core/tenant/roles";
 import type { ActionResult } from "@/core/types/action-result";
 import {
   createActivitySchema,
@@ -12,17 +13,11 @@ import {
 } from "../schemas/activity.schema";
 import { activityService } from "../services/activity.service";
 
-async function requireUser() {
-  const session = await auth();
-  if (!session?.user?.id) throw new AppError("No autorizado", 401);
-  return session.user;
-}
-
 export async function createActivityAction(
   input: CreateActivityInput
 ): Promise<ActionResult<{ id: string }>> {
   try {
-    const user = await requireUser();
+    const session = await requireTenantSession();
     const parsed = createActivitySchema.safeParse(input);
     if (!parsed.success) {
       return {
@@ -31,7 +26,11 @@ export async function createActivityAction(
         fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]>,
       };
     }
-    const created = await activityService.create(parsed.data, user.id);
+    const created = await activityService.create(
+      session.tenantId,
+      parsed.data,
+      session.userId
+    );
     revalidatePath(`/contacts/${created.contactId}`);
     revalidatePath(`/contacts/${created.contactId}/interactions`);
     return { ok: true, data: { id: created.id } };
@@ -48,7 +47,7 @@ export async function updateActivityAction(
   input: UpdateActivityInput
 ): Promise<ActionResult> {
   try {
-    const user = await requireUser();
+    const session = await requireTenantSession();
     const parsed = updateActivitySchema.safeParse(input);
     if (!parsed.success) {
       return {
@@ -58,10 +57,11 @@ export async function updateActivityAction(
       };
     }
     const updated = await activityService.update(
+      session.tenantId,
       id,
       parsed.data,
-      user.id,
-      user.role === "ADMIN"
+      session.userId,
+      isTenantAdmin(session.role)
     );
     revalidatePath(`/contacts/${updated.contactId}`);
     revalidatePath(`/contacts/${updated.contactId}/interactions`);
@@ -79,8 +79,13 @@ export async function deleteActivityAction(
   contactId: string
 ): Promise<ActionResult> {
   try {
-    const user = await requireUser();
-    await activityService.remove(id, user.id, user.role === "ADMIN");
+    const session = await requireTenantSession();
+    await activityService.remove(
+      session.tenantId,
+      id,
+      session.userId,
+      isTenantAdmin(session.role)
+    );
     revalidatePath(`/contacts/${contactId}`);
     revalidatePath(`/contacts/${contactId}/interactions`);
     return { ok: true, data: null };

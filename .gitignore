@@ -58,6 +58,8 @@ next-env.d.ts
 # prisma
 /src/generated/prisma
 
+/backups/
+
 # uploads (archivos subidos por usuarios)
 /uploads/
 

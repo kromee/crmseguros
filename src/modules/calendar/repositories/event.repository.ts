@@ -7,9 +7,9 @@ import type {
 } from "../schemas/event.schema";
 
 export const eventRepository = {
-  async findById(id: string) {
-    return prisma.calendarEvent.findUnique({
-      where: { id },
+  async findById(tenantId: string, id: string) {
+    return prisma.calendarEvent.findFirst({
+      where: { id, tenantId },
       include: {
         contact: { select: { id: true, code: true, fullName: true } },
         user: { select: { id: true, name: true, title: true } },
@@ -17,8 +17,8 @@ export const eventRepository = {
     });
   },
 
-  async list(filters: EventsFilters) {
-    const where: Prisma.CalendarEventWhereInput = {};
+  async list(tenantId: string, filters: EventsFilters) {
+    const where: Prisma.CalendarEventWhereInput = { tenantId };
     if (filters.userId) where.userId = filters.userId;
     if (filters.contactId) where.contactId = filters.contactId;
     if (filters.type) where.type = filters.type;
@@ -39,20 +39,27 @@ export const eventRepository = {
     });
   },
 
-  async countByMonth(userId: string, year: number, month: number) {
+  async countByMonth(
+    tenantId: string,
+    userId: string,
+    year: number,
+    month: number
+  ) {
     const start = new Date(year, month, 1);
     const end = new Date(year, month + 1, 1);
     return prisma.calendarEvent.count({
       where: {
+        tenantId,
         userId,
         startDate: { gte: start, lt: end },
       },
     });
   },
 
-  async upcomingByUser(userId: string, limit = 5) {
+  async upcomingByUser(tenantId: string, userId: string, limit = 5) {
     return prisma.calendarEvent.findMany({
       where: {
+        tenantId,
         userId,
         status: "PENDING",
         startDate: { gte: new Date() },
@@ -65,9 +72,10 @@ export const eventRepository = {
     });
   },
 
-  async create(input: CreateEventInput) {
+  async create(tenantId: string, input: CreateEventInput) {
     return prisma.calendarEvent.create({
       data: {
+        tenantId,
         title: input.title,
         type: input.type,
         contactId: input.contactId ?? null,
@@ -84,9 +92,9 @@ export const eventRepository = {
     });
   },
 
-  async update(id: string, input: UpdateEventInput) {
+  async update(tenantId: string, id: string, input: UpdateEventInput) {
     return prisma.calendarEvent.update({
-      where: { id },
+      where: { id, tenantId },
       data: {
         ...(input.title !== undefined && { title: input.title }),
         ...(input.type !== undefined && { type: input.type }),
@@ -106,8 +114,8 @@ export const eventRepository = {
     });
   },
 
-  async delete(id: string) {
-    return prisma.calendarEvent.delete({ where: { id } });
+  async delete(tenantId: string, id: string) {
+    return prisma.calendarEvent.delete({ where: { id, tenantId } });
   },
 };
 

@@ -9,28 +9,33 @@ import type {
 } from "../schemas/activity.schema";
 
 export const activityService = {
-  async list(filters: ActivitiesFilters) {
-    return activityRepository.list(filters);
+  async list(tenantId: string, filters: ActivitiesFilters) {
+    return activityRepository.list(tenantId, filters);
   },
 
-  async listByContact(contactId: string, type?: string) {
-    return activityRepository.listByContact(contactId, type);
+  async listByContact(tenantId: string, contactId: string, type?: string) {
+    return activityRepository.listByContact(tenantId, contactId, type);
   },
 
-  async countByContact(contactId: string) {
-    return activityRepository.countByContact(contactId);
+  async countByContact(tenantId: string, contactId: string) {
+    return activityRepository.countByContact(tenantId, contactId);
   },
 
-  async getById(id: string) {
-    const activity = await activityRepository.findById(id);
+  async getById(tenantId: string, id: string) {
+    const activity = await activityRepository.findById(tenantId, id);
     if (!activity) throw new NotFoundError("Actividad");
     return activity;
   },
 
-  async create(input: CreateActivityInput, performedBy: string) {
-    const created = await activityRepository.create(input, performedBy);
+  async create(
+    tenantId: string,
+    input: CreateActivityInput,
+    performedBy: string
+  ) {
+    const created = await activityRepository.create(tenantId, input, performedBy);
     await prisma.auditLog.create({
       data: {
+        tenantId,
         userId: performedBy,
         entity: "activities",
         entityId: created.id,
@@ -45,20 +50,22 @@ export const activityService = {
   },
 
   async update(
+    tenantId: string,
     id: string,
     input: UpdateActivityInput,
     currentUserId: string,
     isAdmin: boolean
   ) {
-    const existing = await activityRepository.findById(id);
+    const existing = await activityRepository.findById(tenantId, id);
     if (!existing) throw new NotFoundError("Actividad");
     if (!isAdmin && existing.performedBy !== currentUserId) {
       throw new ForbiddenError();
     }
 
-    const updated = await activityRepository.update(id, input);
+    const updated = await activityRepository.update(tenantId, id, input);
     await prisma.auditLog.create({
       data: {
+        tenantId,
         userId: currentUserId,
         entity: "activities",
         entityId: id,
@@ -69,16 +76,22 @@ export const activityService = {
     return updated;
   },
 
-  async remove(id: string, currentUserId: string, isAdmin: boolean) {
-    const existing = await activityRepository.findById(id);
+  async remove(
+    tenantId: string,
+    id: string,
+    currentUserId: string,
+    isAdmin: boolean
+  ) {
+    const existing = await activityRepository.findById(tenantId, id);
     if (!existing) throw new NotFoundError("Actividad");
     if (!isAdmin && existing.performedBy !== currentUserId) {
       throw new ForbiddenError();
     }
 
-    await activityRepository.delete(id);
+    await activityRepository.delete(tenantId, id);
     await prisma.auditLog.create({
       data: {
+        tenantId,
         userId: currentUserId,
         entity: "activities",
         entityId: id,

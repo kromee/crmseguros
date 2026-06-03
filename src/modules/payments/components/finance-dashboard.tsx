@@ -92,9 +92,9 @@ function StatCard({
           <Icon className="w-5 h-5 text-white" />
         </div>
       </div>
-      <p className="text-2xl font-bold text-slate-800">{value}</p>
-      <p className="text-xs text-slate-500 mt-0.5">{label}</p>
-      {sub && <p className="text-[10px] text-slate-400 mt-1">{sub}</p>}
+      <p className="text-2xl font-bold text-theme-primary">{value}</p>
+      <p className="text-xs text-theme-muted mt-0.5">{label}</p>
+      {sub && <p className="text-[10px] text-theme-muted mt-1">{sub}</p>}
     </div>
   );
 }
@@ -112,8 +112,8 @@ export function FinanceDashboard({ data }: Props) {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-slate-800">Finanzas</h1>
-        <p className="text-sm text-slate-500 mt-0.5">
+        <h1 className="text-xl font-bold text-theme-primary">Finanzas</h1>
+        <p className="text-sm text-theme-muted mt-0.5">
           Resumen financiero {data.year}
         </p>
       </div>
@@ -154,7 +154,7 @@ export function FinanceDashboard({ data }: Props) {
         <div className="lg:col-span-2 crm-card p-5">
           <div className="flex items-center gap-2 mb-4">
             <TrendingUp className="w-4 h-4 text-blue-600" />
-            <h2 className="font-semibold text-slate-800">Cobranza mensual {data.year}</h2>
+            <h2 className="font-semibold text-theme-primary">Cobranza mensual {data.year}</h2>
           </div>
 
           <div className="flex items-end gap-1.5 h-48">
@@ -169,7 +169,7 @@ export function FinanceDashboard({ data }: Props) {
                   key={name}
                   className="flex-1 flex flex-col items-center gap-1"
                 >
-                  <span className="text-[9px] text-slate-400 font-medium">
+                  <span className="text-[9px] text-theme-muted font-medium">
                     {total > 0 ? formatCurrency(total) : ""}
                   </span>
                   <div className="w-full relative" style={{ height: "140px" }}>
@@ -179,13 +179,13 @@ export function FinanceDashboard({ data }: Props) {
                           ? "bg-gradient-to-t from-blue-500 to-blue-400"
                           : total > 0
                             ? "bg-gradient-to-t from-blue-300 to-blue-200"
-                            : "bg-slate-100"
+                            : "bg-[var(--color-bg-elevated)]"
                       }`}
                       style={{ height: `${Math.max(height, 3)}%` }}
                     />
                   </div>
                   <span
-                    className={`text-[10px] font-medium ${isCurrentMonth ? "text-blue-600" : "text-slate-400"}`}
+                    className={`text-[10px] font-medium ${isCurrentMonth ? "text-blue-600" : "text-theme-muted"}`}
                   >
                     {name}
                   </span>
@@ -199,11 +199,11 @@ export function FinanceDashboard({ data }: Props) {
         <div className="crm-card p-5">
           <div className="flex items-center gap-2 mb-4">
             <FileText className="w-4 h-4 text-purple-600" />
-            <h2 className="font-semibold text-slate-800">Primas por tipo</h2>
+            <h2 className="font-semibold text-theme-primary">Primas por tipo</h2>
           </div>
 
           {data.premiumsByType.length === 0 ? (
-            <p className="text-xs text-slate-400 text-center py-8">
+            <p className="text-xs text-theme-muted text-center py-8">
               Sin datos disponibles
             </p>
           ) : (
@@ -223,20 +223,20 @@ export function FinanceDashboard({ data }: Props) {
                 return (
                   <div key={item.type}>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-semibold text-slate-700">
+                      <span className="text-xs font-semibold text-theme-secondary">
                         {typeLabel(item.type)}
                       </span>
-                      <span className="text-xs text-slate-500">
+                      <span className="text-xs text-theme-muted">
                         {formatCurrency(item.totalPremium)} ({pct}%)
                       </span>
                     </div>
-                    <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+                    <div className="w-full h-2 rounded-full bg-[var(--color-bg-elevated)] overflow-hidden">
                       <div
                         className={`h-full rounded-full bg-gradient-to-r ${colors[item.type] ?? "from-slate-300 to-slate-400"}`}
                         style={{ width: `${pct}%` }}
                       />
                     </div>
-                    <p className="text-[10px] text-slate-400 mt-0.5">
+                    <p className="text-[10px] text-theme-muted mt-0.5">
                       {item.count} póliza{item.count !== 1 ? "s" : ""}
                     </p>
                   </div>
@@ -252,13 +252,13 @@ export function FinanceDashboard({ data }: Props) {
         <div className="crm-card p-5">
           <div className="flex items-center gap-2 mb-4">
             <AlertTriangle className="w-4 h-4 text-amber-500" />
-            <h2 className="font-semibold text-slate-800">
+            <h2 className="font-semibold text-theme-primary">
               Próximos vencimientos (60 días)
             </h2>
           </div>
 
           {data.upcomingPolicies.length === 0 ? (
-            <p className="text-xs text-slate-400 text-center py-6">
+            <p className="text-xs text-theme-muted text-center py-6">
               Sin vencimientos próximos
             </p>
           ) : (
@@ -273,7 +273,7 @@ export function FinanceDashboard({ data }: Props) {
                   <Link
                     key={p.id}
                     href={`/contacts/${p.contactId}`}
-                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors group"
+                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-[var(--color-bg-hover)] transition-colors group"
                   >
                     <div
                       className={`flex items-center justify-center w-8 h-8 rounded-lg flex-shrink-0 ${
@@ -284,18 +284,18 @@ export function FinanceDashboard({ data }: Props) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-slate-800 truncate">
+                        <span className="text-sm font-semibold text-theme-primary truncate">
                           {p.contactName}
                         </span>
-                        <span className="text-[10px] font-mono text-slate-400">
+                        <span className="text-[10px] font-mono text-theme-muted">
                           {p.policyNumber}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                      <div className="flex items-center gap-2 text-[11px] text-theme-muted">
                         <span>{typeLabel(p.type)}</span>
-                        <span className="text-slate-300">·</span>
+                        <span className="text-theme-muted/50">·</span>
                         <span>{formatCurrency(p.premium)}</span>
-                        <span className="text-slate-300">·</span>
+                        <span className="text-theme-muted/50">·</span>
                         <span
                           className={
                             urgent
@@ -307,7 +307,7 @@ export function FinanceDashboard({ data }: Props) {
                         </span>
                       </div>
                     </div>
-                    <ArrowRight className="w-4 h-4 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <ArrowRight className="w-4 h-4 text-theme-muted/50 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </Link>
                 );
               })}
@@ -319,11 +319,11 @@ export function FinanceDashboard({ data }: Props) {
         <div className="crm-card p-5">
           <div className="flex items-center gap-2 mb-4">
             <Banknote className="w-4 h-4 text-green-600" />
-            <h2 className="font-semibold text-slate-800">Pagos recientes</h2>
+            <h2 className="font-semibold text-theme-primary">Pagos recientes</h2>
           </div>
 
           {data.recentPayments.length === 0 ? (
-            <p className="text-xs text-slate-400 text-center py-6">
+            <p className="text-xs text-theme-muted text-center py-6">
               Sin pagos registrados
             </p>
           ) : (
@@ -332,7 +332,7 @@ export function FinanceDashboard({ data }: Props) {
                 <Link
                   key={pm.id}
                   href={`/contacts/${pm.contactId}`}
-                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors group"
+                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-[var(--color-bg-hover)] transition-colors group"
                 >
                   <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-50 text-green-600 flex-shrink-0">
                     <Banknote className="w-4 h-4" />
@@ -342,17 +342,17 @@ export function FinanceDashboard({ data }: Props) {
                       <span className="text-sm font-bold text-green-700">
                         {formatCurrency(pm.amount)}
                       </span>
-                      <span className="text-[10px] font-mono text-slate-400">
+                      <span className="text-[10px] font-mono text-theme-muted">
                         {pm.policyNumber}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                    <div className="flex items-center gap-2 text-[11px] text-theme-muted">
                       <span>{pm.contactName}</span>
-                      <span className="text-slate-300">·</span>
+                      <span className="text-theme-muted/50">·</span>
                       <span>{formatDate(pm.paymentDate, "dd MMM yyyy")}</span>
                     </div>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <ArrowRight className="w-4 h-4 text-theme-muted/50 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Link>
               ))}
             </div>

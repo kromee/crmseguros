@@ -16,7 +16,7 @@ const PRIORITY_STYLE: Record<string, string> = {
   ATENCION: "bg-red-100 text-red-700 border-red-200",
   ALTA: "bg-orange-100 text-orange-700 border-orange-200",
   MEDIA: "bg-blue-100 text-blue-700 border-blue-200",
-  BAJA: "bg-slate-100 text-slate-600 border-slate-200",
+  BAJA: "bg-[var(--color-bg-elevated)] text-theme-secondary border-theme",
 };
 
 const AVATAR_COLORS = [
@@ -55,8 +55,8 @@ export function ProspectCard({ prospect, selected, onSelect }: Props) {
   return (
     <button
       onClick={onSelect}
-      className={`w-full text-left bg-white rounded-lg border p-3 transition-all hover:shadow-md ${
-        selected ? "border-blue-500 ring-2 ring-blue-200" : "border-slate-200"
+      className={`w-full text-left bg-[var(--color-bg-card)] rounded-lg border p-3 transition-all hover:shadow-md ${
+        selected ? "border-blue-500 ring-2 ring-blue-200" : "border-theme"
       }`}
     >
       <div className="flex items-start gap-2.5 mb-2">
@@ -68,14 +68,14 @@ export function ProspectCard({ prospect, selected, onSelect }: Props) {
           </AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-slate-800 truncate">
+          <p className="text-sm font-semibold text-theme-primary truncate">
             {prospect.contact.fullName}
           </p>
-          <p className="text-[10px] text-slate-400 font-mono">{prospect.code}</p>
+          <p className="text-[10px] text-theme-muted font-mono">{prospect.code}</p>
         </div>
         <span
           className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full border ${
-            PRIORITY_STYLE[prospect.priority] ?? "bg-slate-100 text-slate-600"
+            PRIORITY_STYLE[prospect.priority] ?? "bg-[var(--color-bg-elevated)] text-theme-secondary"
           }`}
         >
           {priorityLabel(prospect.priority)}
@@ -83,18 +83,18 @@ export function ProspectCard({ prospect, selected, onSelect }: Props) {
       </div>
 
       {prospect.serviceOfInterest && (
-        <p className="text-xs text-slate-600 mb-2 line-clamp-2">
+        <p className="text-xs text-theme-secondary mb-2 line-clamp-2">
           {prospect.serviceOfInterest}
         </p>
       )}
 
       <div className="flex items-center justify-between text-xs mb-2">
         {prospect.estimatedValue && prospect.estimatedValue > 0 ? (
-          <span className="font-semibold text-slate-700">
+          <span className="font-semibold text-theme-secondary">
             {formatCurrencyShort(prospect.estimatedValue)}
           </span>
         ) : (
-          <span className="text-slate-400">Sin valor estimado</span>
+          <span className="text-theme-muted">Sin valor estimado</span>
         )}
         <div className="flex items-center gap-0.5">
           {Array.from({ length: 5 }).map((_, i) => (
@@ -103,7 +103,7 @@ export function ProspectCard({ prospect, selected, onSelect }: Props) {
               className={`w-3 h-3 ${
                 i < prospect.rating
                   ? "fill-amber-400 text-amber-400"
-                  : "text-slate-200"
+                  : "text-theme-muted/40"
               }`}
             />
           ))}
@@ -112,11 +112,11 @@ export function ProspectCard({ prospect, selected, onSelect }: Props) {
 
       {/* Salud */}
       <div className="mb-2">
-        <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1">
+        <div className="flex items-center justify-between text-[10px] text-theme-muted mb-1">
           <span>Salud</span>
-          <span className="font-semibold text-slate-600">{prospect.probability}%</span>
+          <span className="font-semibold text-theme-secondary">{prospect.probability}%</span>
         </div>
-        <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+        <div className="h-1.5 bg-[var(--color-bg-elevated)] rounded-full overflow-hidden">
           <div
             className={`h-full rounded-full transition-all ${healthColor(prospect.probability)}`}
             style={{ width: `${prospect.probability}%` }}
@@ -124,7 +124,7 @@ export function ProspectCard({ prospect, selected, onSelect }: Props) {
         </div>
       </div>
 
-      <div className="flex items-center justify-between text-[10px] text-slate-400 pt-2 border-t border-slate-100">
+      <div className="flex items-center justify-between text-[10px] text-theme-muted pt-2 border-t border-theme-subtle">
         <div className="flex items-center gap-2">
           <Phone className="w-2.5 h-2.5" />
           <Mail className="w-2.5 h-2.5" />

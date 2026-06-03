@@ -94,16 +94,16 @@ export function KanbanBoard({
       {/* Toolbar */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 min-w-[240px] max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-theme-muted" />
           <Input
             placeholder="Buscar por nombre, código o servicio..."
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
-            className="pl-9 h-9 bg-slate-50 border-slate-200 text-sm"
+            className="pl-9 h-9 bg-[var(--color-bg-input)] border-theme text-sm"
           />
         </div>
-        <span className="text-sm text-slate-500">
-          <strong className="text-slate-700">{totalActive}</strong> prospectos activos
+        <span className="text-sm text-theme-muted">
+          <strong className="text-theme-secondary">{totalActive}</strong> prospectos activos
         </span>
         <Link href="/pipeline/new" className="ml-auto">
           <Button className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
@@ -121,23 +121,23 @@ export function KanbanBoard({
           return (
             <div
               key={col.id}
-              className={`flex flex-col bg-slate-50 rounded-xl border-t-4 ${col.accent} min-h-[400px]`}
+              className={`flex flex-col bg-[var(--color-bg-input)] rounded-xl border-t-4 ${col.accent} min-h-[400px]`}
             >
-              <div className="px-4 pt-3 pb-2 border-b border-slate-200">
+              <div className="px-4 pt-3 pb-2 border-b border-theme">
                 <div className="flex items-center justify-between mb-1">
-                  <h3 className="font-semibold text-sm text-slate-800">{col.label}</h3>
-                  <span className="text-xs font-semibold text-slate-500 bg-white px-2 py-0.5 rounded-full border border-slate-200">
+                  <h3 className="font-semibold text-sm text-theme-primary">{col.label}</h3>
+                  <span className="text-xs font-semibold text-theme-muted bg-[var(--color-bg-card)] px-2 py-0.5 rounded-full border border-theme">
                     {colOverview.count}
                   </span>
                 </div>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-theme-muted">
                   {formatCurrencyShort(colOverview.totalValue)} estimados
                 </p>
               </div>
 
               <div className="p-3 space-y-2 flex-1 overflow-y-auto">
                 {items.length === 0 ? (
-                  <div className="text-center text-xs text-slate-400 py-8">
+                  <div className="text-center text-xs text-theme-muted py-8">
                     Sin prospectos en esta etapa
                   </div>
                 ) : (

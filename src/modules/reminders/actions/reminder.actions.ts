@@ -1,24 +1,24 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
 import { AppError } from "@/core/errors/app-error";
+import { requireTenantSession } from "@/core/tenant";
 import type { ActionResult } from "@/core/types/action-result";
 import { eventService } from "@/modules/calendar/services/event.service";
 
-async function requireUser() {
-  const session = await auth();
-  if (!session?.user?.id) throw new AppError("No autorizado", 401);
-  return session.user;
-}
-
 export async function completeReminderAction(id: string): Promise<ActionResult> {
   try {
-    const user = await requireUser();
-    await eventService.update(id, { status: "COMPLETED" }, user.id);
+    const session = await requireTenantSession();
+    await eventService.update(
+      session.tenantId,
+      id,
+      { status: "COMPLETED" },
+      session.userId
+    );
     revalidatePath("/reminders");
     revalidatePath("/calendar");
     revalidatePath("/dashboard");
+    revalidatePath("/", "layout");
     return { ok: true, data: null };
   } catch (err) {
     return {

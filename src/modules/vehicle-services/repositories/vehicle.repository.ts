@@ -7,22 +7,22 @@ import type {
 } from "../schemas/vehicle.schema";
 
 export const vehicleRepository = {
-  async findById(id: string) {
-    return prisma.vehicleService.findUnique({
-      where: { id },
+  async findById(tenantId: string, id: string) {
+    return prisma.vehicleService.findFirst({
+      where: { id, tenantId },
       include: { contact: { select: { id: true, code: true, fullName: true } } },
     });
   },
 
-  async listByContact(contactId: string) {
+  async listByContact(tenantId: string, contactId: string) {
     return prisma.vehicleService.findMany({
-      where: { contactId },
+      where: { tenantId, contactId },
       orderBy: { startDate: "desc" },
     });
   },
 
-  async list(filters: VehiclesFilters) {
-    const where: Prisma.VehicleServiceWhereInput = {};
+  async list(tenantId: string, filters: VehiclesFilters) {
+    const where: Prisma.VehicleServiceWhereInput = { tenantId };
     if (filters.contactId) where.contactId = filters.contactId;
     if (filters.status) where.status = filters.status;
     if (filters.serviceType) where.serviceType = filters.serviceType;
@@ -56,7 +56,7 @@ export const vehicleRepository = {
     };
   },
 
-  async create(input: CreateVehicleInput) {
+  async create(tenantId: string, input: CreateVehicleInput) {
     const documents = {
       checklist: input.documentChecklist ?? {
         ine: false,
@@ -69,6 +69,7 @@ export const vehicleRepository = {
 
     return prisma.vehicleService.create({
       data: {
+        tenantId,
         contactId: input.contactId,
         startDate: input.startDate,
         serviceType: input.serviceType,
@@ -81,7 +82,7 @@ export const vehicleRepository = {
     });
   },
 
-  async update(id: string, input: UpdateVehicleInput) {
+  async update(tenantId: string, id: string, input: UpdateVehicleInput) {
     const data: Prisma.VehicleServiceUpdateInput = {
       ...(input.startDate !== undefined && input.startDate !== null && {
         startDate: input.startDate,
@@ -94,8 +95,8 @@ export const vehicleRepository = {
     };
 
     if (input.documentChecklist !== undefined || input.documentFiles !== undefined) {
-      const current = await prisma.vehicleService.findUnique({
-        where: { id },
+      const current = await prisma.vehicleService.findFirst({
+        where: { id, tenantId },
         select: { documents: true },
       });
       const currentDocs = (current?.documents as {
@@ -110,13 +111,13 @@ export const vehicleRepository = {
     }
 
     return prisma.vehicleService.update({
-      where: { id },
+      where: { id, tenantId },
       data,
     });
   },
 
-  async delete(id: string) {
-    return prisma.vehicleService.delete({ where: { id } });
+  async delete(tenantId: string, id: string) {
+    return prisma.vehicleService.delete({ where: { id, tenantId } });
   },
 };
 

@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { mkdir, unlink, writeFile } from "fs/promises";
 import path from "path";
+import { tenantStoragePath } from "./tenant-paths";
 
 const UPLOAD_DIR = path.join(process.cwd(), "uploads");
 
@@ -21,9 +22,15 @@ export interface UploadResult {
   mimeType: string;
 }
 
+export interface SaveFileOptions {
+  /** Si se indica, guarda en uploads/{tenantId}/{category}/ */
+  tenantId?: string | null;
+}
+
 export async function saveFile(
   file: File,
-  subfolder = "general"
+  category = "general",
+  options?: SaveFileOptions
 ): Promise<UploadResult> {
   if (file.size > MAX_SIZE) {
     throw new Error(`El archivo excede el límite de ${MAX_SIZE / 1024 / 1024} MB`);
@@ -36,6 +43,7 @@ export async function saveFile(
     );
   }
 
+  const subfolder = tenantStoragePath(options?.tenantId, category);
   const dir = path.join(UPLOAD_DIR, subfolder);
   await mkdir(dir, { recursive: true });
 
@@ -66,3 +74,5 @@ export async function deleteFile(relativePath: string): Promise<void> {
 export function getAbsolutePath(relativePath: string): string {
   return path.join(UPLOAD_DIR, relativePath);
 }
+
+export { tenantStoragePath } from "./tenant-paths";

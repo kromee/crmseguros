@@ -10,31 +10,39 @@ import type {
 } from "../schemas/policy.schema";
 
 export const policyService = {
-  async list(filters: PoliciesFilters) {
-    return policyRepository.list(filters);
+  async list(tenantId: string, filters: PoliciesFilters) {
+    return policyRepository.list(tenantId, filters);
   },
 
-  async listByContact(contactId: string) {
-    return policyRepository.listByContact(contactId);
+  async listByContact(tenantId: string, contactId: string) {
+    return policyRepository.listByContact(tenantId, contactId);
   },
 
-  async getById(id: string) {
-    const policy = await policyRepository.findById(id);
+  async getById(tenantId: string, id: string) {
+    const policy = await policyRepository.findById(tenantId, id);
     if (!policy) throw new NotFoundError("Póliza");
     return policy;
   },
 
-  async create(input: CreatePolicyInput, currentUserId: string | null) {
-    const exists = await policyRepository.findByPolicyNumber(input.policyNumber);
+  async create(
+    tenantId: string,
+    input: CreatePolicyInput,
+    currentUserId: string | null
+  ) {
+    const exists = await policyRepository.findByPolicyNumber(
+      tenantId,
+      input.policyNumber
+    );
     if (exists) {
       throw new ValidationError("Ya existe una póliza con ese número");
     }
 
-    const policy = await policyRepository.create(input);
+    const policy = await policyRepository.create(tenantId, input);
 
     if (currentUserId) {
       await prisma.auditLog.create({
         data: {
+          tenantId,
           userId: currentUserId,
           entity: "policies",
           entityId: policy.id,
@@ -47,20 +55,18 @@ export const policyService = {
         },
       });
 
-      // Crear recordatorio automático de renovación si la póliza está activa
-      // y vence en más de 30 días.
       if (policy.status === "ACTIVE") {
         const daysUntilEnd = Math.floor(
           (policy.endDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
         );
         if (daysUntilEnd > 30) {
-          const contact = await prisma.contact.findUnique({
-            where: { id: policy.contactId },
+          const contact = await prisma.contact.findFirst({
+            where: { id: policy.contactId, tenantId },
             select: { fullName: true, assignedTo: true },
           });
           if (contact) {
             try {
-              await eventService.createRenewalReminder({
+              await eventService.createRenewalReminder(tenantId, {
                 policyId: policy.id,
                 policyNumber: policy.policyNumber,
                 contactId: policy.contactId,
@@ -80,15 +86,16 @@ export const policyService = {
   },
 
   async renew(
+    tenantId: string,
     oldPolicyId: string,
     input: CreatePolicyInput,
     currentUserId: string | null
   ) {
-    const old = await policyRepository.findById(oldPolicyId);
+    const old = await policyRepository.findById(tenantId, oldPolicyId);
     if (!old) throw new NotFoundError("Póliza original");
 
     const alreadyRenewed = await prisma.policy.findFirst({
-      where: { renewedFromId: oldPolicyId },
+      where: { tenantId, renewedFromId: oldPolicyId },
       select: { id: true, policyNumber: true, status: true },
     });
     if (alreadyRenewed) {
@@ -103,16 +110,20 @@ export const policyService = {
       );
     }
 
-    const dup = await policyRepository.findByPolicyNumber(input.policyNumber);
+    const dup = await policyRepository.findByPolicyNumber(
+      tenantId,
+      input.policyNumber
+    );
     if (dup) throw new ValidationError("Ya existe una póliza con ese número");
 
     const [, newPolicy] = await prisma.$transaction([
       prisma.policy.update({
-        where: { id: oldPolicyId },
+        where: { id: oldPolicyId, tenantId },
         data: { status: "EXPIRED" },
       }),
       prisma.policy.create({
         data: {
+          tenantId,
           contactId: input.contactId,
           policyNumber: input.policyNumber,
           type: input.type,
@@ -139,6 +150,7 @@ export const policyService = {
     if (currentUserId) {
       await prisma.auditLog.create({
         data: {
+          tenantId,
           userId: currentUserId,
           entity: "policies",
           entityId: newPolicy.id,
@@ -156,13 +168,13 @@ export const policyService = {
         (newPolicy.endDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
       );
       if (daysUntilEnd > 30) {
-        const contact = await prisma.contact.findUnique({
-          where: { id: newPolicy.contactId },
+        const contact = await prisma.contact.findFirst({
+          where: { id: newPolicy.contactId, tenantId },
           select: { fullName: true, assignedTo: true },
         });
         if (contact) {
           try {
-            await eventService.createRenewalReminder({
+            await eventService.createRenewalReminder(tenantId, {
               policyId: newPolicy.id,
               policyNumber: newPolicy.policyNumber,
               contactId: newPolicy.contactId,
@@ -180,20 +192,29 @@ export const policyService = {
     return newPolicy;
   },
 
-  async update(id: string, input: UpdatePolicyInput, currentUserId: string | null) {
-    const existing = await policyRepository.findById(id);
+  async update(
+    tenantId: string,
+    id: string,
+    input: UpdatePolicyInput,
+    currentUserId: string | null
+  ) {
+    const existing = await policyRepository.findById(tenantId, id);
     if (!existing) throw new NotFoundError("Póliza");
 
     if (input.policyNumber && input.policyNumber !== existing.policyNumber) {
-      const dup = await policyRepository.findByPolicyNumber(input.policyNumber);
+      const dup = await policyRepository.findByPolicyNumber(
+        tenantId,
+        input.policyNumber
+      );
       if (dup) throw new ValidationError("Ya existe una póliza con ese número");
     }
 
-    const updated = await policyRepository.update(id, input);
+    const updated = await policyRepository.update(tenantId, id, input);
 
     if (currentUserId) {
       await prisma.auditLog.create({
         data: {
+          tenantId,
           userId: currentUserId,
           entity: "policies",
           entityId: id,
@@ -206,15 +227,16 @@ export const policyService = {
     return updated;
   },
 
-  async remove(id: string, currentUserId: string | null) {
-    const existing = await policyRepository.findById(id);
+  async remove(tenantId: string, id: string, currentUserId: string | null) {
+    const existing = await policyRepository.findById(tenantId, id);
     if (!existing) throw new NotFoundError("Póliza");
 
-    await policyRepository.delete(id);
+    await policyRepository.delete(tenantId, id);
 
     if (currentUserId) {
       await prisma.auditLog.create({
         data: {
+          tenantId,
           userId: currentUserId,
           entity: "policies",
           entityId: id,

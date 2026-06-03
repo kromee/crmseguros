@@ -6,8 +6,9 @@ import {
   isLoginAllowed,
   recordFailedLogin,
 } from "@/core/security/login-rate-limit";
+import { getTenantEntitlements } from "@/core/tenant/entitlements";
 
-export type AuthUser = Pick<User, "id" | "name" | "email" | "role" | "title" | "avatar"> & {
+export type AuthUser = Pick<User, "id" | "name" | "email" | "role" | "title" | "avatar" | "tenantId"> & {
   image?: string | null;
 };
 
@@ -23,12 +24,36 @@ export async function validateCredentials(
 
   const user = await prisma.user.findUnique({
     where: { email: normalizedEmail },
-    select: { id: true, name: true, email: true, role: true, title: true, avatar: true, password: true, isActive: true },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      title: true,
+      avatar: true,
+      password: true,
+      isActive: true,
+      tenantId: true,
+      tenant: { select: { status: true } },
+    },
   });
 
   if (!user || !user.isActive) {
     recordFailedLogin(normalizedEmail);
     return null;
+  }
+
+  if (user.tenantId && user.tenant?.status !== "ACTIVE") {
+    recordFailedLogin(normalizedEmail);
+    return null;
+  }
+
+  if (user.tenantId) {
+    const entitlements = await getTenantEntitlements(user.tenantId);
+    if (!entitlements.canOperate) {
+      recordFailedLogin(normalizedEmail);
+      return null;
+    }
   }
 
   const valid = await bcrypt.compare(password, user.password);
@@ -42,6 +67,7 @@ export async function validateCredentials(
   await prisma.auditLog.create({
     data: {
       userId: user.id,
+      tenantId: user.tenantId,
       entity: "users",
       entityId: user.id,
       action: "VIEW",
@@ -56,6 +82,7 @@ export async function validateCredentials(
     role: user.role,
     title: user.title,
     avatar: user.avatar,
+    tenantId: user.tenantId,
     image: user.avatar ? `/api/files/${user.avatar}` : null,
   };
 }

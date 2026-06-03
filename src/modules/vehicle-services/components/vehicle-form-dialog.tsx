@@ -78,10 +78,10 @@ function SectionTitle({
 }) {
   return (
     <div className="flex items-center gap-2 pb-2">
-      <div className="flex items-center justify-center w-6 h-6 rounded-md bg-slate-100">
-        <Icon className="w-3.5 h-3.5 text-slate-500" />
+      <div className="flex items-center justify-center w-6 h-6 rounded-md bg-[var(--color-bg-elevated)]">
+        <Icon className="w-3.5 h-3.5 text-theme-muted" />
       </div>
-      <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+      <span className="text-xs font-semibold text-theme-muted uppercase tracking-wider">
         {children}
       </span>
     </div>
@@ -280,7 +280,7 @@ export function VehicleFormDialog({
                   onClick={() => setValue("requestMode", m.value as "COTIZACION" | "TRAMITE")}
                   className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all ${
                     active
-                      ? "bg-white text-slate-800 shadow-md"
+                      ? "bg-[var(--color-bg-card)] text-theme-primary shadow-md"
                       : "bg-white/15 text-white/90 hover:bg-white/25 backdrop-blur-sm"
                   }`}
                 >
@@ -359,7 +359,7 @@ export function VehicleFormDialog({
                 <div>
                   <Label htmlFor="quote">Cotización</Label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-medium">$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-theme-muted font-medium">$</span>
                     <Input
                       id="quote"
                       type="number"
@@ -377,13 +377,13 @@ export function VehicleFormDialog({
             <section className="space-y-3">
               <div className="flex items-center justify-between">
                 <SectionTitle icon={FileCheck}>Documentos</SectionTitle>
-                <span className="text-[11px] font-medium text-slate-400">
+                <span className="text-[11px] font-medium text-theme-muted">
                   {completedDocs}/{totalDocs} recibidos
                 </span>
               </div>
 
               {/* Barra de progreso de documentos */}
-              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+              <div className="w-full h-1.5 bg-[var(--color-bg-elevated)] rounded-full overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full transition-all duration-300"
                   style={{ width: `${totalDocs > 0 ? (completedDocs / totalDocs) * 100 : 0}%` }}
@@ -402,7 +402,7 @@ export function VehicleFormDialog({
                       className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
                         checked
                           ? "bg-emerald-50 border-emerald-200"
-                          : "bg-white border-slate-200 hover:border-slate-300"
+                          : "bg-[var(--color-bg-card)] border-theme hover:border-theme"
                       }`}
                     >
                       <input
@@ -419,22 +419,22 @@ export function VehicleFormDialog({
                       <div className={`flex items-center justify-center w-8 h-8 rounded-lg flex-shrink-0 transition-colors ${
                         checked
                           ? "bg-emerald-100"
-                          : "bg-slate-100"
+                          : "bg-[var(--color-bg-elevated)]"
                       }`}>
                         {checked ? (
                           <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                         ) : (
-                          <DIcon className="w-4 h-4 text-slate-400" />
+                          <DIcon className="w-4 h-4 text-theme-muted" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className={`text-sm font-medium ${
-                          checked ? "text-emerald-800" : "text-slate-700"
+                          checked ? "text-emerald-800" : "text-theme-secondary"
                         }`}>
                           {doc.label}
                         </p>
                         <p className={`text-[10px] ${
-                          checked ? "text-emerald-600" : "text-slate-400"
+                          checked ? "text-emerald-600" : "text-theme-muted"
                         }`}>
                           {checked
                             ? filePath
@@ -502,12 +502,12 @@ export function VehicleFormDialog({
           </div>
 
           {/* Footer */}
-          <div className="flex-shrink-0 flex items-center justify-end gap-2 border-t border-slate-100 bg-slate-50/80 px-6 py-4">
+          <div className="flex-shrink-0 flex items-center justify-end gap-2 border-t border-theme-subtle bg-[var(--color-bg-input)]/80 px-6 py-4">
             <Button
               type="button"
               variant="ghost"
               onClick={() => onOpenChange(false)}
-              className="text-slate-500"
+              className="text-theme-muted"
             >
               Cancelar
             </Button>

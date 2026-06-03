@@ -43,7 +43,7 @@ function StatusBadge({ status }: { status: string }) {
 
   return (
     <span
-      className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold ${colors[status] || "bg-slate-100 text-slate-600"}`}
+      className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold ${colors[status] || "bg-[var(--color-bg-elevated)] text-theme-secondary"}`}
     >
       {PAYMENT_STATUS_LABELS[status] || status}
     </span>
@@ -82,17 +82,17 @@ export function PaymentsList({
   return (
     <div className="space-y-3">
       {/* Barra de progreso */}
-      <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-slate-50 border border-slate-100">
+      <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-[var(--color-bg-input)] border border-theme-subtle">
         <div className="flex-1">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+            <span className="text-[10px] font-semibold text-theme-muted uppercase tracking-wider">
               Pagos vs Prima
             </span>
-            <span className="text-xs font-bold text-slate-700">
+            <span className="text-xs font-bold text-theme-secondary">
               {formatCurrency(totalPaid)} / {formatCurrency(premium)}
             </span>
           </div>
-          <div className="w-full h-2 rounded-full bg-slate-200 overflow-hidden">
+          <div className="w-full h-2 rounded-full bg-[var(--color-bg-elevated)] overflow-hidden">
             <div
               className="h-full rounded-full bg-gradient-to-r from-green-400 to-emerald-500 transition-all duration-500"
               style={{ width: `${paidPercent}%` }}
@@ -110,8 +110,8 @@ export function PaymentsList({
 
       {/* Lista */}
       {payments.length === 0 ? (
-        <div className="text-center py-6 text-xs text-slate-400">
-          <Banknote className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+        <div className="text-center py-6 text-xs text-theme-muted">
+          <Banknote className="w-8 h-8 mx-auto mb-2 text-theme-muted/50" />
           Sin pagos registrados
         </div>
       ) : (
@@ -119,7 +119,7 @@ export function PaymentsList({
           {payments.map((p) => (
             <div
               key={p.id}
-              className="flex items-center gap-3 p-3 rounded-lg bg-white border border-slate-100 hover:border-slate-200 transition-colors group"
+              className="flex items-center gap-3 p-3 rounded-lg bg-[var(--color-bg-card)] border border-theme-subtle hover:border-theme transition-colors group"
             >
               <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-50 text-green-600 flex-shrink-0">
                 <Banknote className="w-4 h-4" />
@@ -127,19 +127,19 @@ export function PaymentsList({
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
-                  <span className="text-sm font-bold text-slate-800">
+                  <span className="text-sm font-bold text-theme-primary">
                     {formatCurrency(p.amount)}
                   </span>
                   <StatusBadge status={p.status} />
                 </div>
-                <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                <div className="flex items-center gap-2 text-[11px] text-theme-muted">
                   <CalendarDays className="w-3 h-3" />
                   {new Date(p.paymentDate).toLocaleDateString("es-MX")}
-                  <span className="text-slate-300">·</span>
+                  <span className="text-theme-muted/50">·</span>
                   {methodLabel(p.method)}
                   {p.reference && (
                     <>
-                      <span className="text-slate-300">·</span>
+                      <span className="text-theme-muted/50">·</span>
                       <span className="truncate max-w-[120px]">Ref: {p.reference}</span>
                     </>
                   )}
@@ -149,7 +149,7 @@ export function PaymentsList({
               <button
                 onClick={() => handleDelete(p.id)}
                 disabled={isPending}
-                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all"
+                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md text-theme-muted hover:text-red-500 hover:bg-red-50 transition-all"
                 title="Eliminar pago"
               >
                 <Trash2 className="w-3.5 h-3.5" />

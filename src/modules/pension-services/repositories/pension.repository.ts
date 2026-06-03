@@ -7,22 +7,22 @@ import type {
 } from "../schemas/pension.schema";
 
 export const pensionRepository = {
-  async findById(id: string) {
-    return prisma.pensionService.findUnique({
-      where: { id },
+  async findById(tenantId: string, id: string) {
+    return prisma.pensionService.findFirst({
+      where: { id, tenantId },
       include: { contact: { select: { id: true, code: true, fullName: true } } },
     });
   },
 
-  async listByContact(contactId: string) {
+  async listByContact(tenantId: string, contactId: string) {
     return prisma.pensionService.findMany({
-      where: { contactId },
+      where: { tenantId, contactId },
       orderBy: { requestDate: "desc" },
     });
   },
 
-  async list(filters: PensionsFilters) {
-    const where: Prisma.PensionServiceWhereInput = {};
+  async list(tenantId: string, filters: PensionsFilters) {
+    const where: Prisma.PensionServiceWhereInput = { tenantId };
     if (filters.contactId) where.contactId = filters.contactId;
     if (filters.status) where.status = filters.status;
     if (filters.requestType) where.requestType = filters.requestType;
@@ -56,9 +56,10 @@ export const pensionRepository = {
     };
   },
 
-  async create(input: CreatePensionInput) {
+  async create(tenantId: string, input: CreatePensionInput) {
     return prisma.pensionService.create({
       data: {
+        tenantId,
         contactId: input.contactId,
         requestDate: input.requestDate,
         requestType: input.requestType,
@@ -75,9 +76,9 @@ export const pensionRepository = {
     });
   },
 
-  async update(id: string, input: UpdatePensionInput) {
+  async update(tenantId: string, id: string, input: UpdatePensionInput) {
     return prisma.pensionService.update({
-      where: { id },
+      where: { id, tenantId },
       data: {
         ...(input.requestDate !== undefined && input.requestDate !== null && {
           requestDate: input.requestDate,
@@ -96,8 +97,8 @@ export const pensionRepository = {
     });
   },
 
-  async delete(id: string) {
-    return prisma.pensionService.delete({ where: { id } });
+  async delete(tenantId: string, id: string) {
+    return prisma.pensionService.delete({ where: { id, tenantId } });
   },
 };
 

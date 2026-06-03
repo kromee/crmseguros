@@ -7,9 +7,9 @@ import type {
 } from "../schemas/contact.schema";
 
 export const contactRepository = {
-  async findById(id: string) {
-    return prisma.contact.findUnique({
-      where: { id },
+  async findById(tenantId: string, id: string) {
+    return prisma.contact.findFirst({
+      where: { id, tenantId },
       include: {
         assignedUser: { select: { id: true, name: true, title: true } },
         policies: {
@@ -34,12 +34,14 @@ export const contactRepository = {
     });
   },
 
-  async findByCode(code: string) {
-    return prisma.contact.findUnique({ where: { code } });
+  async findByCode(tenantId: string, code: string) {
+    return prisma.contact.findUnique({
+      where: { tenantId_code: { tenantId, code } },
+    });
   },
 
-  async list(filters: ContactsFilters) {
-    const where: Prisma.ContactWhereInput = {};
+  async list(tenantId: string, filters: ContactsFilters) {
+    const where: Prisma.ContactWhereInput = { tenantId };
 
     if (filters.type) where.type = filters.type;
     if (filters.status) where.status = filters.status;
@@ -80,9 +82,10 @@ export const contactRepository = {
     };
   },
 
-  async countByType() {
+  async countByType(tenantId: string) {
     const rows = await prisma.contact.groupBy({
       by: ["type"],
+      where: { tenantId },
       _count: { _all: true },
     });
     return rows.reduce<Record<string, number>>((acc, r) => {
@@ -91,9 +94,54 @@ export const contactRepository = {
     }, {});
   },
 
-  async create(input: CreateContactInput, code: string, assignedTo: string | null) {
+  /** Clientes nuevos: variación % mes actual vs mes anterior */
+  async getMonthlyClientGrowth(tenantId: string) {
+    const now = new Date();
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+    const [thisMonth, lastMonth] = await Promise.all([
+      prisma.contact.count({
+        where: { tenantId, type: "CLIENT", createdAt: { gte: thisMonthStart } },
+      }),
+      prisma.contact.count({
+        where: {
+          tenantId,
+          type: "CLIENT",
+          createdAt: { gte: lastMonthStart, lt: thisMonthStart },
+        },
+      }),
+    ]);
+
+    if (lastMonth === 0) {
+      if (thisMonth === 0) {
+        return { label: "0%", detail: "Sin altas de clientes este mes", trend: "flat" as const };
+      }
+      return {
+        label: `${thisMonth}`,
+        detail: `cliente${thisMonth !== 1 ? "s" : ""} nuevo${thisMonth !== 1 ? "s" : ""} este mes`,
+        trend: "up" as const,
+      };
+    }
+
+    const pct = ((thisMonth - lastMonth) / lastMonth) * 100;
+    const sign = pct > 0 ? "+" : "";
+    return {
+      label: `${sign}${pct.toFixed(1)}%`,
+      detail: `${thisMonth} vs ${lastMonth} el mes pasado`,
+      trend: pct > 0 ? ("up" as const) : pct < 0 ? ("down" as const) : ("flat" as const),
+    };
+  },
+
+  async create(
+    tenantId: string,
+    input: CreateContactInput,
+    code: string,
+    assignedTo: string | null
+  ) {
     return prisma.contact.create({
       data: {
+        tenantId,
         code,
         type: input.type,
         fullName: input.fullName,
@@ -112,9 +160,9 @@ export const contactRepository = {
     });
   },
 
-  async update(id: string, input: UpdateContactInput) {
+  async update(tenantId: string, id: string, input: UpdateContactInput) {
     return prisma.contact.update({
-      where: { id },
+      where: { id, tenantId },
       data: {
         ...(input.type !== undefined && { type: input.type }),
         ...(input.fullName !== undefined && { fullName: input.fullName }),
@@ -132,12 +180,13 @@ export const contactRepository = {
     });
   },
 
-  async delete(id: string) {
-    return prisma.contact.delete({ where: { id } });
+  async delete(tenantId: string, id: string) {
+    return prisma.contact.delete({ where: { id, tenantId } });
   },
 
-  async nextCodeNumber() {
+  async nextCodeNumber(tenantId: string) {
     const last = await prisma.contact.findFirst({
+      where: { tenantId },
       orderBy: { createdAt: "desc" },
       select: { code: true },
     });

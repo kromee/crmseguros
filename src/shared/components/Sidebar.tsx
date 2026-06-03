@@ -13,7 +13,9 @@ import {
   Shield,
   DollarSign,
   Bell,
+  BarChart3,
 } from "lucide-react";
+import { useTenantBranding, useTenantDisplaySlogan } from "@/shared/providers/tenant-branding-provider";
 
 const navItems = [
   { href: "/dashboard", label: "Panel de Control", icon: LayoutDashboard },
@@ -23,6 +25,7 @@ const navItems = [
   { href: "/reminders", label: "Recordatorios", icon: Bell },
   { href: "/pipeline", label: "Pipeline", icon: TrendingUp },
   { href: "/finances", label: "Finanzas", icon: DollarSign },
+  { href: "/reportes", label: "Reportes", icon: BarChart3 },
 ];
 
 const bottomItems = [
@@ -32,23 +35,28 @@ const bottomItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { name, logo } = useTenantBranding();
+  const tagline = useTenantDisplaySlogan();
 
   const isActive = (href: string) => pathname.startsWith(href);
 
   return (
     <aside className="crm-sidebar">
-      {/* Logo */}
       <div className="crm-sidebar-logo">
         <div className="flex items-center gap-2 mb-1">
-          <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0">
-            <Shield className="w-4 h-4 text-white" />
+          <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center flex-shrink-0 overflow-hidden">
+            {logo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={`/api/files/${logo}`} alt={name} className="w-full h-full object-cover" />
+            ) : (
+              <Shield className="w-4 h-4 text-white" />
+            )}
           </div>
-          <h1>Seguros Mexa</h1>
+          <h1 className="truncate">{name}</h1>
         </div>
-        <span>CRM Corporativo</span>
+        <span className="line-clamp-2">{tagline}</span>
       </div>
 
-      {/* Navegación principal */}
       <nav className="flex-1 py-3">
         {navItems.map(({ href, label, icon: Icon }) => (
           <Link
@@ -62,7 +70,6 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* Navegación inferior */}
       <div className="pb-4 border-t border-white/5 pt-2">
         {bottomItems.map(({ href, label, icon: Icon }) => (
           <Link

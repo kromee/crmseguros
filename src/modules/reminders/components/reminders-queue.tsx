@@ -72,9 +72,9 @@ export function RemindersQueue({ items }: Props) {
   if (items.length === 0) {
     return (
       <div className="crm-card p-12 text-center">
-        <Bell className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-        <p className="text-sm text-slate-600 font-medium">No hay recordatorios pendientes</p>
-        <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+        <Bell className="w-10 h-10 text-theme-muted/50 mx-auto mb-3" />
+        <p className="text-sm text-theme-secondary font-medium">No hay recordatorios pendientes</p>
+        <p className="text-xs text-theme-muted mt-1 max-w-sm mx-auto">
           Los eventos del calendario con recordatorio activo aparecerán aquí cuando llegue su hora.
         </p>
         <Link href="/calendar" className="inline-block mt-4">
@@ -102,11 +102,11 @@ export function RemindersQueue({ items }: Props) {
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${style.badge}`}>
                     {style.label}
                   </span>
-                  <span className="text-[10px] font-medium text-slate-500 px-2 py-0.5 rounded-full bg-white/80 border border-slate-200">
+                  <span className="text-[10px] font-medium text-theme-muted px-2 py-0.5 rounded-full bg-[var(--color-bg-card)]/80 border border-theme">
                     {eventTypeLabel(item.type)}
                   </span>
                 </div>
-                <h3 className="text-sm font-semibold text-slate-800">{item.title}</h3>
+                <h3 className="text-sm font-semibold text-theme-primary">{item.title}</h3>
                 {item.contact && (
                   <Link
                     href={`/contacts/${item.contact.id}`}
@@ -115,7 +115,7 @@ export function RemindersQueue({ items }: Props) {
                     {item.contact.fullName} · {item.contact.code}
                   </Link>
                 )}
-                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-slate-500">
+                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-theme-muted">
                   <span className="flex items-center gap-1">
                     <Clock className="w-3 h-3" />
                     Evento: {formatDateTime(item.startDate)}

@@ -11,6 +11,8 @@ import { notFound } from "next/navigation";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/auth";
+import { isTenantAdmin } from "@/core/tenant/roles";
+import { requireTenantSession } from "@/core/tenant";
 import { ACTIVITY_TYPES } from "@/core/constants";
 import { NotFoundError } from "@/core/errors/app-error";
 import { getInitials } from "@/core/utils/format";
@@ -46,18 +48,19 @@ export default async function ContactInteractionsPage({
 
   const session = await auth();
   if (!session?.user) return null;
+  const { tenantId } = await requireTenantSession();
 
   let contact;
   try {
-    contact = await contactService.getById(id);
+    contact = await contactService.getById(tenantId, id);
   } catch (err) {
     if (err instanceof NotFoundError) notFound();
     throw err;
   }
 
   const [activities, counters] = await Promise.all([
-    activityService.listByContact(id, filterType),
-    activityService.countByContact(id),
+    activityService.listByContact(tenantId, id, filterType),
+    activityService.countByContact(tenantId, id),
   ]);
 
   const serialized = activities.map((a) => ({
@@ -83,7 +86,7 @@ export default async function ContactInteractionsPage({
       {/* Header navegación */}
       <div className="flex items-center gap-2">
         <Link href={`/contacts/${id}`}>
-          <Button variant="ghost" size="sm" className="gap-1.5 text-slate-500">
+          <Button variant="ghost" size="sm" className="gap-1.5 text-theme-muted">
             <ArrowLeft className="w-4 h-4" />
             Volver al contacto
           </Button>
@@ -101,32 +104,32 @@ export default async function ContactInteractionsPage({
                 </AvatarFallback>
               </Avatar>
               <div>
-                <h2 className="text-sm font-semibold text-slate-800 leading-tight">
+                <h2 className="text-sm font-semibold text-theme-primary leading-tight">
                   {contact.fullName}
                 </h2>
-                <p className="text-xs text-slate-400 font-mono">{contact.code}</p>
+                <p className="text-xs text-theme-muted font-mono">{contact.code}</p>
               </div>
             </div>
-            <div className="text-xs text-slate-500 space-y-1">
+            <div className="text-xs text-theme-muted space-y-1">
               <p>
-                <span className="text-slate-400">Teléfono:</span> {contact.phone}
+                <span className="text-theme-muted">Teléfono:</span> {contact.phone}
               </p>
               <p>
-                <span className="text-slate-400">Correo:</span>{" "}
+                <span className="text-theme-muted">Correo:</span>{" "}
                 {contact.email ?? "—"}
               </p>
             </div>
 
-            <div className="mt-4 pt-3 border-t border-slate-100">
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">
+            <div className="mt-4 pt-3 border-t border-theme-subtle">
+              <p className="text-xs font-semibold text-theme-muted uppercase tracking-wide mb-2">
                 Total interacciones
               </p>
-              <p className="text-3xl font-bold text-slate-800">{counters.total}</p>
+              <p className="text-3xl font-bold text-theme-primary">{counters.total}</p>
             </div>
           </div>
 
           <div className="crm-card p-4">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">
+            <p className="text-xs font-semibold text-theme-muted uppercase tracking-wide mb-3">
               Filtrar por tipo
             </p>
             <div className="space-y-1">
@@ -157,10 +160,10 @@ export default async function ContactInteractionsPage({
         <div className="lg:col-span-3 space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold text-slate-800">
+              <h1 className="text-xl font-bold text-theme-primary">
                 Bitácora de interacciones
               </h1>
-              <p className="text-sm text-slate-500 mt-0.5">
+              <p className="text-sm text-theme-muted mt-0.5">
                 {filterType
                   ? `Filtrando: ${ACTIVITY_TYPES.find((t) => t.value === filterType)?.label}`
                   : "Todas las entradas registradas"}
@@ -173,7 +176,7 @@ export default async function ContactInteractionsPage({
             contactId={id}
             activities={serialized}
             currentUserId={session.user.id!}
-            isAdmin={session.user.role === "ADMIN"}
+            isAdmin={isTenantAdmin(session.user.role)}
           />
         </div>
       </div>
@@ -200,14 +203,14 @@ function FilterTab({
       className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${
         active
           ? "bg-blue-600 text-white font-medium"
-          : "hover:bg-slate-50 text-slate-600"
+          : "hover:bg-[var(--color-bg-hover)] text-theme-secondary"
       }`}
     >
       <span className="flex items-center gap-2">
         {Icon && <Icon className="w-3.5 h-3.5" />}
         {label}
       </span>
-      <span className={`text-xs ${active ? "text-blue-100" : "text-slate-400"}`}>
+      <span className={`text-xs ${active ? "text-blue-100" : "text-theme-muted"}`}>
         {count}
       </span>
     </Link>

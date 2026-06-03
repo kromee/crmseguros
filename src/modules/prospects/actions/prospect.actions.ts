@@ -2,8 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
 import { AppError } from "@/core/errors/app-error";
+import { requireTenantSession } from "@/core/tenant";
 import type { ActionResult } from "@/core/types/action-result";
 import {
   changeStageSchema,
@@ -16,17 +16,11 @@ import {
 } from "../schemas/prospect.schema";
 import { prospectService } from "../services/prospect.service";
 
-async function requireUser() {
-  const session = await auth();
-  if (!session?.user?.id) throw new AppError("No autorizado", 401);
-  return session.user;
-}
-
 export async function createProspectAction(
   input: CreateProspectInput
 ): Promise<ActionResult<{ id: string; code: string }>> {
   try {
-    const user = await requireUser();
+    const session = await requireTenantSession();
     const parsed = createProspectSchema.safeParse(input);
     if (!parsed.success) {
       return {
@@ -35,7 +29,11 @@ export async function createProspectAction(
         fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]>,
       };
     }
-    const created = await prospectService.create(parsed.data, user.id);
+    const created = await prospectService.create(
+      session.tenantId,
+      parsed.data,
+      session.userId
+    );
     revalidatePath("/pipeline");
     revalidatePath(`/contacts/${created.contactId}`);
     return { ok: true, data: { id: created.id, code: created.code } };
@@ -59,7 +57,7 @@ export async function createProspectWithContactAction(
   input: CreateProspectWithContactInput
 ): Promise<ActionResult<{ prospectId: string; contactId: string; code: string }>> {
   try {
-    const user = await requireUser();
+    const session = await requireTenantSession();
     const parsed = createProspectWithContactSchema.safeParse(input);
     if (!parsed.success) {
       return {
@@ -69,8 +67,9 @@ export async function createProspectWithContactAction(
       };
     }
     const { contact, prospect } = await prospectService.createWithContact(
+      session.tenantId,
       parsed.data,
-      user.id
+      session.userId
     );
     revalidatePath("/pipeline");
     revalidatePath("/contacts");
@@ -97,7 +96,7 @@ export async function updateProspectAction(
   input: UpdateProspectInput
 ): Promise<ActionResult> {
   try {
-    const user = await requireUser();
+    const session = await requireTenantSession();
     const parsed = updateProspectSchema.safeParse(input);
     if (!parsed.success) {
       return {
@@ -106,7 +105,7 @@ export async function updateProspectAction(
         fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]>,
       };
     }
-    await prospectService.update(id, parsed.data, user.id);
+    await prospectService.update(session.tenantId, id, parsed.data, session.userId);
     revalidatePath("/pipeline");
     return { ok: true, data: null };
   } catch (err) {
@@ -122,12 +121,17 @@ export async function changeProspectStageAction(
   stage: string
 ): Promise<ActionResult> {
   try {
-    const user = await requireUser();
+    const session = await requireTenantSession();
     const parsed = changeStageSchema.safeParse({ stage });
     if (!parsed.success) {
       return { ok: false, error: "Etapa inválida" };
     }
-    await prospectService.changeStage(id, parsed.data.stage, user.id);
+    await prospectService.changeStage(
+      session.tenantId,
+      id,
+      parsed.data.stage,
+      session.userId
+    );
     revalidatePath("/pipeline");
     return { ok: true, data: null };
   } catch (err) {
@@ -142,8 +146,12 @@ export async function convertProspectToClientAction(
   id: string
 ): Promise<ActionResult<{ contactId: string }>> {
   try {
-    const user = await requireUser();
-    const result = await prospectService.convertToClient(id, user.id);
+    const session = await requireTenantSession();
+    const result = await prospectService.convertToClient(
+      session.tenantId,
+      id,
+      session.userId
+    );
     revalidatePath("/pipeline");
     revalidatePath(`/contacts/${result.contactId}`);
     revalidatePath("/contacts");
@@ -158,8 +166,8 @@ export async function convertProspectToClientAction(
 
 export async function markProspectLostAction(id: string): Promise<ActionResult> {
   try {
-    const user = await requireUser();
-    await prospectService.markAsLost(id, user.id);
+    const session = await requireTenantSession();
+    await prospectService.markAsLost(session.tenantId, id, session.userId);
     revalidatePath("/pipeline");
     return { ok: true, data: null };
   } catch (err) {
@@ -172,8 +180,8 @@ export async function markProspectLostAction(id: string): Promise<ActionResult> 
 
 export async function deleteProspectAction(id: string): Promise<ActionResult> {
   try {
-    const user = await requireUser();
-    await prospectService.remove(id, user.id);
+    const session = await requireTenantSession();
+    await prospectService.remove(session.tenantId, id, session.userId);
     revalidatePath("/pipeline");
     return { ok: true, data: null };
   } catch (err) {

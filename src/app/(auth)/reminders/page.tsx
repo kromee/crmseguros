@@ -1,15 +1,14 @@
 import { Bell } from "lucide-react";
-import { auth } from "@/auth";
+import { requireTenantSession } from "@/core/tenant";
 import { RemindersQueue } from "@/modules/reminders/components/reminders-queue";
 import { reminderService } from "@/modules/reminders/services/reminder.service";
 
 export const dynamic = "force-dynamic";
 
 export default async function RemindersPage() {
-  const session = await auth();
-  if (!session?.user?.id) return null;
+  const { tenantId, userId } = await requireTenantSession();
 
-  const items = await reminderService.getQueue(session.user.id);
+  const items = await reminderService.getQueue(tenantId, userId);
 
   const serialized = items.map((item) => ({
     ...item,
@@ -26,11 +25,11 @@ export default async function RemindersPage() {
     <div className="space-y-5">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-theme-primary flex items-center gap-2">
             <Bell className="w-7 h-7 text-amber-500" />
             Cola de recordatorios
           </h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <p className="text-sm text-theme-muted mt-0.5">
             Eventos del calendario según la hora de recordatorio configurada.
             Sin envío automático por WhatsApp (próxima fase).
           </p>

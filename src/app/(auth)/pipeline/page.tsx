@@ -1,4 +1,5 @@
 import { NotFoundError } from "@/core/errors/app-error";
+import { requireTenantSession } from "@/core/tenant";
 import { prisma } from "@/infrastructure/prisma/client";
 import { prospectsFiltersSchema } from "@/modules/prospects/schemas/prospect.schema";
 import { prospectService } from "@/modules/prospects/services/prospect.service";
@@ -19,9 +20,10 @@ export default async function PipelinePage({ searchParams }: PageProps) {
     search: params.search,
   });
 
+  const { tenantId } = await requireTenantSession();
   const [groups, overview] = await Promise.all([
-    prospectService.listByStage(filters),
-    prospectService.getOverview(),
+    prospectService.listByStage(tenantId, filters),
+    prospectService.getOverview(tenantId),
   ]);
 
   const serializedGroups: Record<string, ReturnType<typeof serializeProspect>[]> = {
@@ -60,7 +62,7 @@ export default async function PipelinePage({ searchParams }: PageProps) {
 
   if (selectedId) {
     try {
-      const full = await prospectService.getById(selectedId);
+      const full = await prospectService.getById(tenantId, selectedId);
       if (!selectedProspect) {
         // El prospecto puede estar fuera del filtro actual (ej. WON/LOST). Lo añadimos al drawer.
         selectedProspect = serializeProspect(full);
@@ -77,6 +79,7 @@ export default async function PipelinePage({ searchParams }: PageProps) {
       // Próximo evento de calendario asociado al contacto del prospecto.
       const upcoming = await prisma.calendarEvent.findFirst({
         where: {
+          tenantId,
           contactId: full.contactId,
           status: "PENDING",
           startDate: { gte: new Date() },
@@ -108,8 +111,8 @@ export default async function PipelinePage({ searchParams }: PageProps) {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-bold text-slate-800">Pipeline comercial</h1>
-        <p className="text-sm text-slate-500 mt-0.5">
+        <h1 className="text-2xl font-bold text-theme-primary">Pipeline comercial</h1>
+        <p className="text-sm text-theme-muted mt-0.5">
           Tablero Kanban de prospectos activos por etapa
         </p>
       </div>

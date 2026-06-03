@@ -65,12 +65,12 @@ export function PolicyVehiclePhotoUpload({
     if (vehiclePhoto) {
       return (
         <div className={compact ? "space-y-2" : "space-y-3"}>
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide flex items-center gap-1.5">
+          <p className="text-xs font-semibold text-theme-muted uppercase tracking-wide flex items-center gap-1.5">
             <Car className="w-3.5 h-3.5" />
             Foto del vehículo (solo lectura)
           </p>
           <div
-            className={`relative overflow-hidden rounded-lg border border-slate-200 bg-slate-50 ${
+            className={`relative overflow-hidden rounded-lg border border-theme bg-[var(--color-bg-input)] ${
               compact ? "max-w-[200px]" : "max-w-xs"
             }`}
           >
@@ -93,7 +93,7 @@ export function PolicyVehiclePhotoUpload({
       );
     }
     return (
-      <p className="flex items-center gap-2 text-xs text-slate-400">
+      <p className="flex items-center gap-2 text-xs text-theme-muted">
         <Lock className="w-3.5 h-3.5 flex-shrink-0" />
         Póliza vencida: no se puede subir foto del vehículo.
       </p>
@@ -103,12 +103,12 @@ export function PolicyVehiclePhotoUpload({
   if (vehiclePhoto) {
     return (
       <div className={compact ? "space-y-2" : "space-y-3"}>
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide flex items-center gap-1.5">
+        <p className="text-xs font-semibold text-theme-muted uppercase tracking-wide flex items-center gap-1.5">
           <Car className="w-3.5 h-3.5" />
           Foto del vehículo
         </p>
         <div
-          className={`relative overflow-hidden rounded-lg border border-slate-200 bg-slate-50 ${
+          className={`relative overflow-hidden rounded-lg border border-theme bg-[var(--color-bg-input)] ${
             compact ? "max-w-[200px]" : "max-w-xs"
           }`}
         >
@@ -144,7 +144,7 @@ export function PolicyVehiclePhotoUpload({
 
   return (
     <div className={compact ? "space-y-1.5" : "space-y-2"}>
-      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide flex items-center gap-1.5">
+      <p className="text-xs font-semibold text-theme-muted uppercase tracking-wide flex items-center gap-1.5">
         <Car className="w-3.5 h-3.5" />
         Foto del vehículo
       </p>

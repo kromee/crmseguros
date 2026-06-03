@@ -11,8 +11,38 @@ datasource db {
 // ─────────────────────────────────────────
 
 enum UserRole {
-  ADMIN
+  SUPER_ADMIN
+  TENANT_ADMIN
   USER
+}
+
+enum TenantStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  SUSPENDED
+}
+
+enum LicenseStatus {
+  AVAILABLE
+  USED
+  REVOKED
+  EXPIRED
+}
+
+/// Vigencia de la licencia / suscripción al activar
+enum LicenseTerm {
+  MONTHLY
+  ANNUAL
+  MONTHS_24
+  YEARS_4
 }
 
 enum ContactType {
@@ -195,33 +225,132 @@ enum AuditAction {
 }
 
 // ─────────────────────────────────────────
+// SAAS — PLATAFORMA MULTI-TENANT
+// ─────────────────────────────────────────
+
+model Plan {
+  id             String   @id @default(uuid())
+  slug           String   @unique @db.VarChar(50)
+  name           String   @db.VarChar(100)
+  maxUsers       Int      @default(2)
+  storageLimitMb Int      @default(5120)
+  priceMonthly   Decimal  @db.Decimal(10, 2)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tenants       Tenant[]
+  subscriptions Subscription[]
+  licenses      License[]
+
+  @@map("plans")
+}
+
+model Tenant {
+  id             String       @id @default(uuid())
+  name           String       @db.VarChar(200)
+  slug           String       @unique @db.VarChar(80)
+  logo           String?      @db.VarChar(500)
+  slogan         String?      @db.VarChar(300)
+  status         TenantStatus @default(PENDING)
+  planId         String
+  maxUsers       Int          @default(2)
+  storageLimitMb Int          @default(5120)
+  catalogSettings Json?       @map("catalog_settings")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  plan          Plan           @relation(fields: [planId], references: [id])
+  users         User[]
+  subscriptions Subscription[]
+  licenses      License[]
+  contacts      Contact[]
+  policies      Policy[]
+  pensionServices PensionService[]
+  vehicleServices VehicleService[]
+  payments      Payment[]
+  prospects     Prospect[]
+  activities    Activity[]
+  calendarEvents CalendarEvent[]
+  auditLogs     AuditLog[]
+
+  @@index([status])
+  @@map("tenants")
+}
+
+model Subscription {
+  id        String             @id @default(uuid())
+  tenantId  String
+  planId    String
+  term      LicenseTerm
+  status    SubscriptionStatus @default(ACTIVE)
+  startsAt  DateTime
+  expiresAt DateTime
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  plan   Plan   @relation(fields: [planId], references: [id])
+
+  @@index([tenantId, status])
+  @@index([expiresAt])
+  @@map("subscriptions")
+}
+
+model License {
+  id        String        @id @default(uuid())
+  code      String        @unique @db.VarChar(32)
+  keyHash   String        @db.VarChar(255)
+  planId    String
+  term      LicenseTerm
+  status    LicenseStatus @default(AVAILABLE)
+  tenantId  String?
+  expiresAt DateTime?
+  usedAt    DateTime?
+  notes     String?       @db.Text
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  plan   Plan    @relation(fields: [planId], references: [id])
+  tenant Tenant? @relation(fields: [tenantId], references: [id])
+
+  @@index([status])
+  @@index([tenantId])
+  @@map("licenses")
+}
+
+// ─────────────────────────────────────────
 // MODELOS
 // ─────────────────────────────────────────
 
 model User {
   id        String   @id @default(uuid())
+  tenantId  String?
   name      String   @db.VarChar(150)
   email     String   @unique @db.VarChar(255)
   password  String   @db.VarChar(255)
   role      UserRole @default(USER)
   avatar    String?  @db.VarChar(500)
-  title     String?  @db.VarChar(100) // ej. "Broker Senior", "Gestor de Cuentas"
+  title     String?  @db.VarChar(100)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  contacts       Contact[]        @relation("AssignedContacts")
-  prospects      Prospect[]       @relation("AssignedProspects")
+  tenant         Tenant?         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contacts       Contact[]       @relation("AssignedContacts")
+  prospects      Prospect[]      @relation("AssignedProspects")
   calendarEvents CalendarEvent[]
   activities     Activity[]
   auditLogs      AuditLog[]
 
+  @@index([tenantId])
   @@map("users")
 }
 
 model Contact {
   id         String        @id @default(uuid())
-  code       String        @unique @db.VarChar(20) // SM-XXXX
+  tenantId   String
+  code       String        @db.VarChar(20) // SM-XXXX por tenant
   type       ContactType   @default(PROSPECT)
   fullName   String        @db.VarChar(200)
   phone      String        @db.VarChar(20)
@@ -236,6 +365,7 @@ model Contact {
   notes      String?       @db.Text
   assignedTo String?
 
+  tenant         Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   assignedUser   User?            @relation("AssignedContacts", fields: [assignedTo], references: [id])
   policies       Policy[]
   pensionServices PensionService[]
@@ -247,7 +377,8 @@ model Contact {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([type, status])
+  @@unique([tenantId, code])
+  @@index([tenantId, type, status])
   @@index([assignedTo])
   @@index([phone])
   @@index([email])
@@ -256,8 +387,9 @@ model Contact {
 
 model Policy {
   id               String           @id @default(uuid())
+  tenantId         String
   contactId        String
-  policyNumber     String           @unique @db.VarChar(100)
+  policyNumber     String           @db.VarChar(100)
   type             PolicyType
   plan             String?          @db.VarChar(200)
   insurer          String?          @db.VarChar(200) // GNP, AXA, Qualitas, Mapfre...
@@ -288,6 +420,7 @@ model Policy {
   renewedFrom      Policy?  @relation("PolicyRenewals", fields: [renewedFromId], references: [id], onDelete: SetNull)
   renewedBy        Policy?  @relation("PolicyRenewals")
 
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   contact   Contact    @relation(fields: [contactId], references: [id], onDelete: Cascade)
   activities Activity[]
   payments  Payment[]
@@ -295,7 +428,8 @@ model Policy {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([contactId])
+  @@unique([tenantId, policyNumber])
+  @@index([tenantId, contactId])
   @@index([renewedFromId])
   @@index([endDate])
   @@index([status])
@@ -304,6 +438,7 @@ model Policy {
 
 model PensionService {
   id              String             @id @default(uuid())
+  tenantId        String
   contactId       String
   requestDate     DateTime           @db.Date
   requestType     PensionRequestType @default(ASESORIA)
@@ -317,17 +452,19 @@ model PensionService {
   bitacora        String?            @db.Text
   status          ServiceStatus      @default(PENDING)
 
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([contactId])
+  @@index([tenantId, contactId])
   @@map("pension_services")
 }
 
 model VehicleService {
   id          String              @id @default(uuid())
+  tenantId    String
   contactId   String
   startDate   DateTime            @db.Date
   serviceType VehicleServiceType
@@ -337,17 +474,19 @@ model VehicleService {
   status      ServiceStatus       @default(PENDING)
   documents   Json?               // { ine: bool, tarjetaCirculacion: bool, factura: bool, titulo: bool }
 
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([contactId])
+  @@index([tenantId, contactId])
   @@map("vehicle_services")
 }
 
 model Payment {
   id            String        @id @default(uuid())
+  tenantId      String
   policyId      String
   amount        Decimal       @db.Decimal(12, 2)
   paymentDate   DateTime      @db.Date
@@ -358,12 +497,13 @@ model Payment {
   notes         String?       @db.Text
   status        PaymentStatus @default(CONFIRMED)
 
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   policy Policy @relation(fields: [policyId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([policyId])
+  @@index([tenantId, policyId])
   @@index([paymentDate])
   @@index([status])
   @@map("payments")
@@ -371,7 +511,8 @@ model Payment {
 
 model Prospect {
   id                String         @id @default(uuid())
-  code              String         @unique @db.VarChar(20) // PR-XXX
+  tenantId          String
+  code              String         @db.VarChar(20) // PR-XXX por tenant
   contactId         String
   stage             ProspectStage  @default(CONTACTO_INICIAL)
   priority          Priority       @default(MEDIA)
@@ -385,6 +526,7 @@ model Prospect {
   rating            Int            @default(3) // 1-5 estrellas
   status            ProspectStatus @default(ACTIVE)
 
+  tenant       Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   contact      Contact    @relation(fields: [contactId], references: [id], onDelete: Cascade)
   assignedUser User?      @relation("AssignedProspects", fields: [assignedTo], references: [id])
   activities   Activity[]
@@ -392,13 +534,15 @@ model Prospect {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([stage, status])
+  @@unique([tenantId, code])
+  @@index([tenantId, stage, status])
   @@index([assignedTo])
   @@map("prospects")
 }
 
 model Activity {
   id          String         @id @default(uuid())
+  tenantId    String
   contactId   String
   prospectId  String?
   policyId    String?
@@ -409,6 +553,7 @@ model Activity {
   isAutomatic Boolean        @default(false)
   attachments Json?          // rutas archivos
 
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   contact     Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
   prospect    Prospect? @relation(fields: [prospectId], references: [id])
   policy      Policy?   @relation(fields: [policyId], references: [id])
@@ -416,7 +561,7 @@ model Activity {
 
   createdAt DateTime @default(now())
 
-  @@index([contactId])
+  @@index([tenantId, contactId])
   @@index([prospectId])
   @@index([createdAt])
   @@map("activities")
@@ -424,6 +569,7 @@ model Activity {
 
 model CalendarEvent {
   id              String      @id @default(uuid())
+  tenantId        String
   title           String      @db.VarChar(300)
   type            EventType
   contactId       String?
@@ -439,19 +585,21 @@ model CalendarEvent {
   status          EventStatus @default(PENDING)
   syncGoogle      Boolean     @default(false)
 
+  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   contact Contact? @relation(fields: [contactId], references: [id])
   user    User     @relation(fields: [userId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([userId, startDate])
+  @@index([tenantId, userId, startDate])
   @@index([type, status])
   @@map("calendar_events")
 }
 
 model AuditLog {
   id        String      @id @default(uuid())
+  tenantId  String?
   userId    String
   entity    String      @db.VarChar(100)
   entityId  String      @db.VarChar(36)
@@ -460,9 +608,10 @@ model AuditLog {
   ipAddress String?     @db.VarChar(50)
   createdAt DateTime    @default(now())
 
-  user User @relation(fields: [userId], references: [id])
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  user   User    @relation(fields: [userId], references: [id])
 
-  @@index([entity, entityId])
+  @@index([tenantId, entity, entityId])
   @@index([userId])
   @@map("audit_log")
 }

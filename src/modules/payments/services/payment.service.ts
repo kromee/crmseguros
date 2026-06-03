@@ -6,33 +6,33 @@ import type {
 } from "../schemas/payment.schema";
 
 export const paymentService = {
-  async create(input: CreatePaymentInput) {
-    return paymentRepository.create(input);
+  async create(tenantId: string, input: CreatePaymentInput) {
+    return paymentRepository.create(tenantId, input);
   },
 
-  async delete(id: string) {
-    const existing = await paymentRepository.findById(id);
+  async delete(tenantId: string, id: string) {
+    const existing = await paymentRepository.findById(tenantId, id);
     if (!existing) throw new NotFoundError("Pago no encontrado");
-    return paymentRepository.delete(id);
+    return paymentRepository.delete(tenantId, id);
   },
 
-  async listByPolicy(policyId: string) {
-    return paymentRepository.listByPolicy(policyId);
+  async listByPolicy(tenantId: string, policyId: string) {
+    return paymentRepository.listByPolicy(tenantId, policyId);
   },
 
-  async list(filters: PaymentFilters) {
-    return paymentRepository.list(filters);
+  async list(tenantId: string, filters: PaymentFilters) {
+    return paymentRepository.list(tenantId, filters);
   },
 
-  async policyPaymentSummary(policyId: string) {
-    return paymentRepository.sumByPolicy(policyId);
+  async policyPaymentSummary(tenantId: string, policyId: string) {
+    return paymentRepository.sumByPolicy(tenantId, policyId);
   },
 
-  async annualSummary(year: number) {
-    return paymentRepository.annualSummary(year);
+  async annualSummary(tenantId: string, year: number) {
+    return paymentRepository.annualSummary(tenantId, year);
   },
 
-  async totalPremiumsAnnual(year: number) {
-    return paymentRepository.totalPremiumsAnnual(year);
+  async totalPremiumsAnnual(tenantId: string, year: number) {
+    return paymentRepository.totalPremiumsAnnual(tenantId, year);
   },
 };

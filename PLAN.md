@@ -3,7 +3,7 @@
 > **Documento maestro de ejecución.** Todo el trabajo debe seguir este orden.  
 > No saltar fases sin cerrar la anterior. Actualizar checkboxes al completar tareas.
 
-**Última revisión:** 2026-05-27  
+**Última revisión:** 2026-05-30  
 **Referencia:** PDF *STACK-DISEÑO Y PROPUESTA FINAL* + mockups en `assets/`
 
 ---
@@ -12,11 +12,11 @@
 
 | Capa | Hecho | Pendiente |
 |------|-------|-----------|
-| Memoria (.md) | ✅ ARQUITECTURA, DATABASE, AGENTES, MODULOS, DISEÑO, PLAN | Mantener al día |
-| Setup Next.js + UI base | ✅ Layout, sidebar, 9 pantallas mock | Conectar datos reales (Fase 3 cerrada) |
-| Prisma schema | ✅ Modelos definidos + migración aplicada | SP/vistas (opcional) |
-| `src/modules/*` | ✅ contacts, policies, pension-services, vehicle-services, services, activities, prospects, calendar, dashboard, payments, users, reminders | reportes |
-| API / Server Actions | ✅ CRUD + archivos + finanzas + recordatorios + dashboard agregado | reportes/deploy |
+| Memoria (.md) | ✅ ARQUITECTURA, DATABASE, AGENTES, MODULOS, DISEÑO, PLAN, BACKUPS | Mantener al día |
+| Setup Next.js + UI base | ✅ Layout, sidebar, pantallas con datos reales, loaders/skeletons | Tipos base opcionales (0.8) |
+| Prisma schema | ✅ Modelos + multi-tenant + catálogos por agencia | SP/vistas (opcional) |
+| `src/modules/*` | ✅ Core + reportes + notificaciones + tenants SaaS | — |
+| API / Server Actions | ✅ CRUD + archivos + finanzas + reportes CSV | Deploy producción |
 | Auth | ✅ Login + middleware + roles + rate limit | Recuperar contraseña (post-MVP) |
 | MySQL operativo | ✅ Docker MySQL 8.0, migrado y seed | — |
 
@@ -260,10 +260,10 @@ FASE 3 ─ Contactos (módulo central) ◄─── PRIORIDAD NEGOCIO
 
 | # | Tarea | Estado |
 |---|--------|--------|
-| 10.1 | Pantalla **Reportes** (PDF págs. 21–22) — definir alcance MVP | ⬜ |
-| 10.2 | `/settings` — perfil, catálogos (orígenes, aseguradoras) | ⬜ |
-| 10.3 | `/support` — placeholder o enlace | ⬜ |
-| 10.4 | Backups DB documentados | ⬜ |
+| 10.1 | Pantalla **Reportes** (MVP + export CSV) | ✅ |
+| 10.2 | `/settings` — perfil (topbar), marca, catálogos, usuarios | ✅ |
+| 10.3 | `/support` — página de soporte | ✅ |
+| 10.4 | Backups DB + uploads documentados (`BACKUPS.md`, `npm run backup`) | ✅ |
 | 10.5 | Deploy Hostinger + SSL + variables producción | ⬜ |
 | 10.6 | CI/CD GitHub → Hostinger | ⬜ |
 
@@ -289,17 +289,33 @@ FASE 3 ─ Contactos (módulo central) ◄─── PRIORIDAD NEGOCIO
 
 ## 6. Qué hacer AHORA (siguiente sprint)
 
-Fases 3–9 cerradas. Próximo trabajo:
+Fases 3–9 cerradas. Evolución **SaaS multi-tenant** en curso:
 
-1. **Fase 10.1** — Pantalla Reportes (alcance MVP)
-2. **Fase 10.2** — `/settings` ampliado (perfil, catálogos)
-3. **Fase 10.5–10.6** — Deploy Hostinger + CI/CD
+| Fase SaaS | Contenido | Estado |
+|-----------|-----------|--------|
+| SAAS 0 | Schema multi-tenant, roles, seed, filtrado por `tenantId` | ✅ |
+| SAAS 2 | Licencias: generar key, activar agencia (`/activar`), panel `/platform/licenses` | ✅ |
+| SAAS 3 | Panel platform: agencias, suspender/reactivar, renovar suscripciones | ✅ |
+| SAAS 4 | Límites `maxUsers`, storage, suscripción vencida | ✅ |
 
-Pendientes menores arrastrados:
+Próximo trabajo funcional:
+
+1. **Fase 10.5–10.6** — Deploy Hostinger + CI/CD
+2. **Commit estable** del repo antes de producción
+
+Pendientes menores / post-MVP:
 - 3.9 TanStack Table (postpuesto por peso en RAM)
-- Drag & drop en pipeline (mejora futura post-MVP)
+- Drag & drop en pipeline (mejora futura)
 - Google Calendar sync (futuro)
+- Recuperar contraseña
 - Vincular eventos a póliza/prospecto (hoy solo contacto)
+- Completar recordatorio desde panel de notificaciones
+
+Completado recientemente (UX / catálogos):
+- Catálogo de orígenes y aseguradoras en contactos, pólizas y nuevo prospecto
+- Notificaciones funcionales en topbar
+- Loaders: skeletons (dashboard, contactos, servicios, pipeline, calendario) + transición de rutas
+- Crecimiento mensual real en directorio de contactos
 
 ---
 
@@ -338,7 +354,11 @@ Actualizar esta tabla al cerrar cada fase:
 | 7 | Calendario | ✅ Completada | 2026-05-24 |
 | 8 | Dashboard real | ✅ Completada | 2026-05-24 |
 | 9 | Finanzas/archivos | ✅ Completada | 2026-05-27 |
-| 10 | Reportes/deploy | ⬜ Pendiente | — |
+| 10 | Reportes/deploy | 🟡 Reportes + settings + backups ✅; deploy ⬜ | — |
+| SAAS 0 | Multi-tenant base | ✅ Completada | 2026-05-28 |
+| SAAS 2 | Licencias + activación | ✅ Completada | 2026-05-28 |
+| SAAS 3 | Gestión agencias + suscripciones | ✅ Completada | 2026-05-28 |
+| SAAS 4 | Límites plan + bloqueo vencimiento | ✅ Completada | 2026-05-28 |
 
 ---
 

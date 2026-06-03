@@ -21,7 +21,7 @@ export function NewActivityButton({
   const className =
     variant === "primary"
       ? "bg-blue-600 hover:bg-blue-700 text-white gap-2"
-      : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 gap-2";
+      : "border border-theme bg-[var(--color-bg-card)] text-theme-secondary hover:bg-[var(--color-bg-hover)] gap-2";
 
   return (
     <>

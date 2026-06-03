@@ -26,12 +26,12 @@ export function ContactsSearch() {
 
   return (
     <div className="relative flex-1 max-w-md">
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-theme-muted" />
       <Input
         placeholder="Buscar por nombre, teléfono, correo o código..."
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        className="pl-9 h-9 bg-slate-50 border-slate-200 text-sm"
+        className="pl-9 h-9 text-sm"
       />
     </div>
   );

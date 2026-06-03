@@ -2,8 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
-import { TrendingUp } from "lucide-react";
-import { CONTACT_ORIGINS } from "@/core/constants";
+import { TrendingDown, TrendingUp } from "lucide-react";
 
 const TYPES = [
   { value: "CLIENT", label: "Clientes" },
@@ -12,10 +11,15 @@ const TYPES = [
 
 interface Props {
   counts: Record<string, number>;
-  growthLabel?: string;
+  growth: {
+    label: string;
+    detail: string;
+    trend: "up" | "down" | "flat";
+  };
+  contactOrigins: ReadonlyArray<{ value: string; label: string }>;
 }
 
-export function ContactsFilters({ counts, growthLabel = "+12.4%" }: Props) {
+export function ContactsFilters({ counts, growth, contactOrigins }: Props) {
   const router = useRouter();
   const params = useSearchParams();
   const [isPending, startTransition] = useTransition();
@@ -35,10 +39,14 @@ export function ContactsFilters({ counts, growthLabel = "+12.4%" }: Props) {
   }
 
   return (
-    <aside className={`w-52 flex-shrink-0 space-y-4 ${isPending ? "opacity-70" : ""}`}>
+    <aside
+      className={`w-52 flex-shrink-0 space-y-4 transition-opacity duration-200 ${
+        isPending ? "opacity-50 pointer-events-none" : ""
+      }`}
+    >
       {/* Categoría */}
       <div className="crm-card p-4">
-        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">
+        <p className="text-xs font-semibold text-theme-muted uppercase tracking-wide mb-3">
           Categoría
         </p>
         <div className="space-y-1">
@@ -51,18 +59,18 @@ export function ContactsFilters({ counts, growthLabel = "+12.4%" }: Props) {
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${
                   active
                     ? "bg-blue-600 text-white font-medium"
-                    : "hover:bg-slate-50 text-slate-600"
+                    : "hover:bg-[var(--color-bg-hover)] text-theme-secondary"
                 }`}
               >
                 <span className="flex items-center gap-2">
                   <span
                     className={`w-1.5 h-1.5 rounded-full ${
-                      active ? "bg-white" : "bg-slate-400"
+                      active ? "bg-[var(--color-bg-card)]" : "bg-[var(--color-text-muted)]"
                     }`}
                   />
                   {t.label}
                 </span>
-                <span className={`text-xs ${active ? "text-blue-100" : "text-slate-400"}`}>
+                <span className={`text-xs ${active ? "text-blue-100" : "text-theme-muted"}`}>
                   {counts[t.value] ?? 0}
                 </span>
               </button>
@@ -73,7 +81,7 @@ export function ContactsFilters({ counts, growthLabel = "+12.4%" }: Props) {
 
       {/* Origen */}
       <div className="crm-card p-4">
-        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">
+        <p className="text-xs font-semibold text-theme-muted uppercase tracking-wide mb-3">
           Origen
         </p>
         <select
@@ -82,7 +90,7 @@ export function ContactsFilters({ counts, growthLabel = "+12.4%" }: Props) {
           className="crm-select"
         >
           <option value="">Todos los orígenes</option>
-          {CONTACT_ORIGINS.map((o) => (
+          {contactOrigins.map((o) => (
             <option key={o.value} value={o.value}>
               {o.label}
             </option>
@@ -91,12 +99,14 @@ export function ContactsFilters({ counts, growthLabel = "+12.4%" }: Props) {
       </div>
 
       {/* Crecimiento */}
-      <div className="rounded-xl bg-blue-600 p-4 text-white">
-        <p className="text-xs font-semibold text-blue-200 mb-1">Crecimiento Mensual</p>
-        <div className="flex items-center gap-1">
-          <span className="text-2xl font-bold">{growthLabel}</span>
-          <TrendingUp className="w-5 h-5 text-blue-200" />
+      <div className="rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 p-4 text-white shadow-sm">
+        <p className="text-xs font-semibold text-blue-200 mb-1">Crecimiento mensual</p>
+        <div className="flex items-center gap-1.5">
+          <span className="text-2xl font-bold">{growth.label}</span>
+          {growth.trend === "up" && <TrendingUp className="w-5 h-5 text-blue-200" />}
+          {growth.trend === "down" && <TrendingDown className="w-5 h-5 text-blue-200" />}
         </div>
+        <p className="text-[11px] text-blue-200/90 mt-1 leading-snug">{growth.detail}</p>
       </div>
     </aside>
   );
