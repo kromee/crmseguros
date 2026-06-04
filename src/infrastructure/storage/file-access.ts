@@ -6,8 +6,19 @@ export function isPublicBrandingAsset(relativePath: string): boolean {
 }
 
 /**
+ * Rutas legacy (contacts/..., policies/...) sin prefijo {tenantId}/.
+ * En producción se desactivan por defecto tras migrar uploads.
+ */
+export function isLegacyUploadPathAllowed(): boolean {
+  const explicit = process.env.ALLOW_LEGACY_UPLOAD_PATHS;
+  if (explicit === "true") return true;
+  if (explicit === "false") return false;
+  return process.env.NODE_ENV !== "production";
+}
+
+/**
  * Tenant users solo acceden a archivos bajo su carpeta {tenantId}/...
- * o rutas legacy sin prefijo de tenant (contacts/..., policies/...).
+ * o rutas legacy sin prefijo de tenant (solo si ALLOW_LEGACY_UPLOAD_PATHS lo permite).
  */
 export function canAccessTenantFile(
   relativePath: string,
@@ -22,5 +33,5 @@ export function canAccessTenantFile(
     return firstSegment === tenantId;
   }
 
-  return true;
+  return isLegacyUploadPathAllowed();
 }

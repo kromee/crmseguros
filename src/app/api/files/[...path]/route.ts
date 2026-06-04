@@ -3,7 +3,7 @@ import { readFile } from "fs/promises";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { canAccessTenantFile, isPublicBrandingAsset } from "@/infrastructure/storage/file-access";
-import { getAbsolutePath } from "@/infrastructure/storage/local-storage";
+import { resolveUploadPath } from "@/infrastructure/storage/local-storage";
 
 const MIME_MAP: Record<string, string> = {
   ".pdf": "application/pdf",
@@ -20,8 +20,9 @@ export async function GET(
   const session = await auth();
   const { path: segments } = await params;
   const relativePath = segments.join("/");
+  const absolutePath = resolveUploadPath(relativePath);
 
-  if (relativePath.includes("..")) {
+  if (!absolutePath) {
     return NextResponse.json({ error: "Ruta inválida" }, { status: 400 });
   }
 
@@ -41,8 +42,6 @@ export async function GET(
   ) {
     return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
   }
-
-  const absolutePath = getAbsolutePath(relativePath);
 
   if (!existsSync(absolutePath)) {
     return NextResponse.json({ error: "Archivo no encontrado" }, { status: 404 });

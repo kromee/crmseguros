@@ -1,13 +1,7 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import { PRODUCT_NAME, PRODUCT_TAGLINE } from "@/core/constants";
 import { ThemeProvider } from "@/shared/providers/theme-provider";
 import "./globals.css";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-});
 
 export const metadata: Metadata = {
   title: PRODUCT_NAME,
@@ -20,8 +14,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={`${inter.variable} h-full antialiased`} suppressHydrationWarning>
-      <body className="min-h-full">
+    <html lang="es" className="h-full antialiased" suppressHydrationWarning>
+      <body className="min-h-full font-sans">
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

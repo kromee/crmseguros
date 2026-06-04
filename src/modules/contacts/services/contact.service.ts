@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { NotFoundError, ValidationError } from "@/core/errors/app-error";
 import { prisma } from "@/infrastructure/prisma/client";
 import { contactRepository } from "../repositories/contact.repository";
@@ -8,9 +8,17 @@ import type {
   UpdateContactInput,
 } from "../schemas/contact.schema";
 
+const MAX_CODE_RETRIES = 5;
+
 async function generateContactCode(tenantId: string): Promise<string> {
   const next = await contactRepository.nextCodeNumber(tenantId);
   return `SM-${next}`;
+}
+
+function isContactCodeConflict(error: unknown): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002"
+  );
 }
 
 export const contactService = {
@@ -41,32 +49,44 @@ export const contactService = {
       }
     }
 
-    const code = await generateContactCode(tenantId);
-    const contact = await contactRepository.create(
-      tenantId,
-      input,
-      code,
-      currentUserId
-    );
-
-    if (currentUserId) {
-      await prisma.auditLog.create({
-        data: {
+    const maxRetries = MAX_CODE_RETRIES;
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      const code = await generateContactCode(tenantId);
+      try {
+        const contact = await contactRepository.create(
           tenantId,
-          userId: currentUserId,
-          entity: "contacts",
-          entityId: contact.id,
-          action: "CREATE",
-          changes: {
-            code,
-            fullName: contact.fullName,
-            type: contact.type,
-          } as Prisma.InputJsonValue,
-        },
-      });
+          input,
+          code,
+          currentUserId
+        );
+
+        if (currentUserId) {
+          await prisma.auditLog.create({
+            data: {
+              tenantId,
+              userId: currentUserId,
+              entity: "contacts",
+              entityId: contact.id,
+              action: "CREATE",
+              changes: {
+                code,
+                fullName: contact.fullName,
+                type: contact.type,
+              } as Prisma.InputJsonValue,
+            },
+          });
+        }
+
+        return contact;
+      } catch (error) {
+        if (isContactCodeConflict(error) && attempt < maxRetries - 1) {
+          continue;
+        }
+        throw error;
+      }
     }
 
-    return contact;
+    throw new ValidationError("No se pudo generar un código de contacto único");
   },
 
   async update(

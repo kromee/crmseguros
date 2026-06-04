@@ -18,7 +18,7 @@ export async function validateCredentials(
 ): Promise<AuthUser | null> {
   const normalizedEmail = email.toLowerCase().trim();
 
-  if (!isLoginAllowed(normalizedEmail)) {
+  if (!(await isLoginAllowed(normalizedEmail))) {
     return null;
   }
 
@@ -39,30 +39,30 @@ export async function validateCredentials(
   });
 
   if (!user || !user.isActive) {
-    recordFailedLogin(normalizedEmail);
+    await recordFailedLogin(normalizedEmail);
     return null;
   }
 
   if (user.tenantId && user.tenant?.status !== "ACTIVE") {
-    recordFailedLogin(normalizedEmail);
+    await recordFailedLogin(normalizedEmail);
     return null;
   }
 
   if (user.tenantId) {
     const entitlements = await getTenantEntitlements(user.tenantId);
     if (!entitlements.canOperate) {
-      recordFailedLogin(normalizedEmail);
+      await recordFailedLogin(normalizedEmail);
       return null;
     }
   }
 
   const valid = await bcrypt.compare(password, user.password);
   if (!valid) {
-    recordFailedLogin(normalizedEmail);
+    await recordFailedLogin(normalizedEmail);
     return null;
   }
 
-  clearLoginAttempts(normalizedEmail);
+  await clearLoginAttempts(normalizedEmail);
 
   await prisma.auditLog.create({
     data: {
