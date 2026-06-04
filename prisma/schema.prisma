@@ -615,3 +615,13 @@ model AuditLog {
   @@index([userId])
   @@map("audit_log")
 }
+
+model LoginRateLimit {
+  email        String   @id @db.VarChar(255)
+  attemptCount Int      @default(0)
+  resetAt      DateTime
+  lastIp       String?  @db.VarChar(50)
+  updatedAt    DateTime @updatedAt
+
+  @@map("login_rate_limits")
+}
