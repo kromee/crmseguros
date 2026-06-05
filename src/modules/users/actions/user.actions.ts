@@ -11,10 +11,12 @@ import {
   updateProfileSchema,
   changePasswordSchema,
   adminResetPasswordSchema,
+  forceLogoutUserSchema,
   type CreateUserInput,
   type UpdateProfileInput,
   type ChangePasswordInput,
   type AdminResetPasswordInput,
+  type ForceLogoutUserInput,
 } from "../schemas/user.schema";
 import { userService } from "../services/user.service";
 
@@ -210,6 +212,32 @@ export async function adminResetUserPasswordAction(
     return {
       ok: false,
       error: err instanceof AppError ? err.message : "No se pudo restablecer la contraseña",
+    };
+  }
+}
+
+export async function forceLogoutUserAction(
+  input: ForceLogoutUserInput
+): Promise<ActionResult> {
+  try {
+    const session = await requireTenantAdminSession();
+    const parsed = forceLogoutUserSchema.safeParse(input);
+    if (!parsed.success) {
+      return { ok: false, error: "Usuario inválido" };
+    }
+
+    await userService.forceLogoutByAdmin(
+      session.tenantId,
+      parsed.data.userId,
+      session.userId
+    );
+
+    revalidatePath("/settings");
+    return { ok: true, data: null };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof AppError ? err.message : "No se pudo cerrar la sesión",
     };
   }
 }

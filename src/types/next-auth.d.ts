@@ -25,5 +25,8 @@ declare module "next-auth/jwt" {
     role: UserRole;
     tenantId?: string | null;
     title?: string | null;
+    avatar?: string | null;
+    sessionNonce?: string;
+    error?: "SessionInvalid";
   }
 }

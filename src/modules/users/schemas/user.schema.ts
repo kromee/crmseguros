@@ -46,7 +46,12 @@ export const adminResetPasswordSchema = z
     path: ["confirmPassword"],
   });
 
+export const forceLogoutUserSchema = z.object({
+  userId: z.string().uuid(),
+});
+
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 export type AdminResetPasswordInput = z.infer<typeof adminResetPasswordSchema>;
+export type ForceLogoutUserInput = z.infer<typeof forceLogoutUserSchema>;

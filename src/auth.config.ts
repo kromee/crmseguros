@@ -7,6 +7,8 @@ export type AppJwt = JWT & {
   tenantId?: string | null;
   title?: string | null;
   avatar?: string | null;
+  sessionNonce?: string;
+  error?: "SessionInvalid";
 };
 
 /**
@@ -21,6 +23,8 @@ export const authConfig = {
   session: {
     strategy: "jwt",
     maxAge: 60 * 60 * 8,
+    /** Revalida el JWT contra BD (sesión única) cada 60 s */
+    updateAge: 60,
   },
   providers: [],
   callbacks: {

@@ -1,8 +1,9 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, ShieldCheck, UserCog, KeyRound } from "lucide-react";
-import { useRef, useState, useTransition } from "react";
+import { Plus, ShieldCheck, UserCog, KeyRound, Circle, LogOut } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -12,9 +13,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { UserRole } from "@prisma/client";
 import { isTenantAdmin } from "@/core/tenant/roles";
-import { getInitials } from "@/core/utils/format";
+import { getInitials, timeAgo } from "@/core/utils/format";
 import {
   createUserAction,
+  forceLogoutUserAction,
   setUserActiveAction,
   setUserAvatarAction,
 } from "../actions/user.actions";
@@ -30,6 +32,8 @@ interface UserListItem {
   avatar: string | null;
   isActive: boolean;
   createdAt: Date;
+  isOnline: boolean;
+  lastActiveAt: Date | string | null;
 }
 
 interface Props {
@@ -47,12 +51,20 @@ export function UsersManagement({
   maxUsers,
   activeUsers,
 }: Props) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [uploadingUserId, setUploadingUserId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [targetUserId, setTargetUserId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [resetUser, setResetUser] = useState<UserListItem | null>(null);
+
+  const onlineUsers = users.filter((u) => u.isOnline && u.isActive);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => router.refresh(), 90_000);
+    return () => window.clearInterval(timer);
+  }, [router]);
 
   const form = useForm<CreateUserInput>({
     resolver: zodResolver(createUserSchema) as never,
@@ -83,6 +95,26 @@ export function UsersManagement({
       toast.success("Usuario creado");
       reset();
       setCreateOpen(false);
+    });
+  }
+
+  async function handleForceLogout(user: UserListItem) {
+    if (
+      !confirm(
+        `¿Cerrar la sesión de ${user.name}? Podrá volver a entrar desde su dispositivo.`
+      )
+    ) {
+      return;
+    }
+
+    startTransition(async () => {
+      const res = await forceLogoutUserAction({ userId: user.id });
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success(`Sesión de ${user.name} cerrada`);
+      router.refresh();
     });
   }
 
@@ -138,8 +170,8 @@ export function UsersManagement({
           </p>
         )}
         <p className="text-xs text-theme-muted mt-3">
-          Puedes restablecer la contraseña de agentes (USER). La nueva contraseña se muestra una sola
-          vez al guardar; compártela con el usuario por un canal seguro.
+          Puedes restablecer la contraseña o cerrar la sesión remota de agentes (USER). La contraseña
+          nueva se muestra una sola vez al guardar.
         </p>
       </div>
 
@@ -207,9 +239,61 @@ export function UsersManagement({
       </Dialog>
 
       <div className="crm-card p-5">
+        <h2 className="text-base font-semibold text-theme-primary flex items-center gap-2 mb-1">
+          <Circle className="w-3 h-3 fill-emerald-500 text-emerald-500" />
+          Usuarios en línea
+        </h2>
+        <p className="text-xs text-theme-muted mb-4">
+          Sesión activa en el sistema (se actualiza cada ~90 s)
+        </p>
+        {onlineUsers.length === 0 ? (
+          <p className="text-sm text-theme-muted py-2">Nadie con sesión abierta en este momento.</p>
+        ) : (
+          <ul className="space-y-2">
+            {onlineUsers.map((u) => (
+              <li
+                key={u.id}
+                className="flex items-center gap-3 text-sm py-2 px-3 rounded-lg bg-emerald-50/80 border border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20"
+              >
+                <span className="relative flex h-2 w-2 shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                </span>
+                <span className="font-medium text-theme-primary">{u.name}</span>
+                <span className="text-theme-muted text-xs truncate">{u.email}</span>
+                {u.lastActiveAt && (
+                  <span className="text-xs text-theme-muted ml-auto shrink-0 hidden sm:inline">
+                    {timeAgo(u.lastActiveAt)}
+                  </span>
+                )}
+                {u.role === "USER" && u.id !== currentUserId && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="ml-auto sm:ml-0 gap-1 shrink-0"
+                    disabled={isPending}
+                    onClick={() => handleForceLogout(u)}
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    Cerrar sesión
+                  </Button>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div className="crm-card p-5">
         <h2 className="text-base font-semibold text-theme-primary flex items-center gap-2 mb-4">
           <UserCog className="w-4 h-4 text-indigo-600" />
           Usuarios del sistema
+          {onlineUsers.length > 0 && (
+            <span className="text-xs font-normal text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+              {onlineUsers.length} en línea
+            </span>
+          )}
         </h2>
         <input
           ref={fileRef}
@@ -242,6 +326,12 @@ export function UsersManagement({
               <span className={`text-[10px] px-2 py-1 rounded-full font-semibold ${u.isActive ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
                 {u.isActive ? "Autorizado" : "Desactivado"}
               </span>
+              {u.isActive && u.isOnline && (
+                <span className="text-[10px] px-2 py-1 rounded-full font-semibold bg-emerald-100 text-emerald-700 inline-flex items-center gap-1">
+                  <Circle className="w-2 h-2 fill-current" />
+                  En línea
+                </span>
+              )}
               <Button
                 type="button"
                 variant="outline"
@@ -254,6 +344,20 @@ export function UsersManagement({
               >
                 {uploadingUserId === u.id ? "Subiendo..." : "Foto"}
               </Button>
+              {u.role === "USER" && u.id !== currentUserId && u.isOnline && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1 text-amber-700 border-amber-200 hover:bg-amber-50"
+                  disabled={isPending}
+                  onClick={() => handleForceLogout(u)}
+                  title="Cerrar sesión remota del agente"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  Cerrar sesión
+                </Button>
+              )}
               {u.role === "USER" && u.id !== currentUserId && (
                 <Button
                   type="button"

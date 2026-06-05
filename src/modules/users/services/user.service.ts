@@ -4,11 +4,25 @@ import { assertCanAddUser, assertTenantCanOperate } from "@/core/tenant/entitlem
 import { isSuperAdmin } from "@/core/tenant/roles";
 import { prisma } from "@/infrastructure/prisma/client";
 import type { UserRole } from "@prisma/client";
+import { clearSession, isSessionActive } from "@/modules/auth/services/session.service";
 import type { CreateUserInput } from "../schemas/user.schema";
 
+export type TenantUserListItem = {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  title: string | null;
+  avatar: string | null;
+  isActive: boolean;
+  createdAt: Date;
+  isOnline: boolean;
+  lastActiveAt: Date | null;
+};
+
 export const userService = {
-  async list(tenantId: string) {
-    return prisma.user.findMany({
+  async list(tenantId: string): Promise<TenantUserListItem[]> {
+    const rows = await prisma.user.findMany({
       where: { tenantId },
       orderBy: [{ role: "asc" }, { createdAt: "desc" }],
       select: {
@@ -20,8 +34,16 @@ export const userService = {
         avatar: true,
         isActive: true,
         createdAt: true,
+        sessionNonce: true,
+        sessionActiveAt: true,
       },
     });
+
+    return rows.map(({ sessionNonce, sessionActiveAt, ...user }) => ({
+      ...user,
+      isOnline: isSessionActive(sessionNonce, sessionActiveAt),
+      lastActiveAt: sessionActiveAt,
+    }));
   },
 
   async create(tenantId: string, input: CreateUserInput, currentUserId: string) {
@@ -92,6 +114,53 @@ export const userService = {
     });
 
     return updated;
+  },
+
+  async forceLogoutByAdmin(
+    tenantId: string,
+    targetUserId: string,
+    currentUserId: string
+  ) {
+    if (targetUserId === currentUserId) {
+      throw new ValidationError("No puedes cerrar tu propia sesión desde aquí");
+    }
+
+    const target = await prisma.user.findFirst({
+      where: { id: targetUserId, tenantId },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        isActive: true,
+        sessionNonce: true,
+        sessionActiveAt: true,
+      },
+    });
+    if (!target) throw new NotFoundError("Usuario");
+    if (!target.isActive) throw new ValidationError("El usuario está desactivado");
+    if (target.role !== "USER") {
+      throw new ValidationError("Solo puedes cerrar sesión de agentes (USER)");
+    }
+    if (!isSessionActive(target.sessionNonce, target.sessionActiveAt)) {
+      throw new ValidationError("El usuario no tiene una sesión activa");
+    }
+
+    await assertTenantCanOperate(tenantId);
+    await clearSession(targetUserId);
+
+    await prisma.auditLog.create({
+      data: {
+        tenantId,
+        userId: currentUserId,
+        entity: "users",
+        entityId: targetUserId,
+        action: "UPDATE",
+        changes: {
+          event: "session_forced_logout_by_admin",
+          targetEmail: target.email,
+        },
+      },
+    });
   },
 
   async setAvatar(

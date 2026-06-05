@@ -60,6 +60,9 @@ next-env.d.ts
 
 /backups/
 
+# documentación interna / propuestas
+/docs/
+
 # uploads (archivos subidos por usuarios)
 /uploads/
 
