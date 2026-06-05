@@ -64,17 +64,6 @@ export async function validateCredentials(
 
   await clearLoginAttempts(normalizedEmail);
 
-  await prisma.auditLog.create({
-    data: {
-      userId: user.id,
-      tenantId: user.tenantId,
-      entity: "users",
-      entityId: user.id,
-      action: "VIEW",
-      changes: { event: "login" },
-    },
-  });
-
   return {
     id: user.id,
     name: user.name,

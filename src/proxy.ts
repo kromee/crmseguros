@@ -1,17 +1,14 @@
-import NextAuth from "next-auth";
 import { NextResponse } from "next/server";
-import { authConfig } from "@/auth.config";
-
-const { auth } = NextAuth(authConfig);
+import { auth } from "@/auth";
 
 const publicPaths = ["/login", "/activar", "/cuenta-bloqueada"];
 
 const crmPathPattern =
-  /^\/(dashboard|contacts|services|calendar|pipeline|finances|reminders|settings)(\/|$)/;
+  /^\/(dashboard|contacts|services|calendar|pipeline|finances|reminders|settings|support|reportes)(\/|$)/;
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;
-  const isLoggedIn = !!req.auth;
+  const isLoggedIn = !!req.auth?.user?.id;
   const role = req.auth?.user?.role;
   const isSuperAdmin = role === "SUPER_ADMIN";
   const isPublic = publicPaths.some((p) => pathname === p || pathname.startsWith(`${p}/`));
@@ -59,6 +56,8 @@ export const config = {
     "/finances/:path*",
     "/reminders/:path*",
     "/settings/:path*",
+    "/support/:path*",
+    "/reportes/:path*",
     "/platform/:path*",
     "/login",
     "/activar",

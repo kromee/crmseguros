@@ -149,6 +149,7 @@ Rollback: checkout del commit anterior + `npm ci` + `npm run build` + `pm2 reloa
 - Acceso a archivos acotado por tenant (+ super admin)
 - Rate limit de login en MySQL (5 intentos / 15 min por email)
 - Códigos de contacto `SM-XXXX` con reintento ante colisión única
+- **Sesión única por usuario**: si la cuenta ya tiene sesión activa, el nuevo inicio de sesión se **rechaza** (todos los roles, incl. super admin). Al cerrar sesión se libera el cupo. TTL alineado con la sesión JWT (8 h).
 
 ## Scripts útiles
 
