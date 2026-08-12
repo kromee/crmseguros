@@ -1,4 +1,4 @@
-# Agentes y Subagentes — CRM Seguros Mexa
+# Agentes y Subagentes — CRM Seguros Vale
 
 ## Filosofía
 - NO un agente gigante único

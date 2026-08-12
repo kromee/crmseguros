@@ -1,4 +1,4 @@
-# Rendimiento en desarrollo — CRM Seguros Mexa
+# Rendimiento en desarrollo — CRM Seguros Vale
 
 > **Tu Mac tiene 8 GB de RAM.** Es justo para Next.js 16 + Docker + Cursor + Chrome.  
 > Aplicar todo lo de abajo cuando notes lentitud.

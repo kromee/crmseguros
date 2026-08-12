@@ -1,4 +1,4 @@
-# Módulos Funcionales — CRM Seguros Mexa
+# Módulos Funcionales — CRM Seguros Vale
 
 ## 1. Dashboard (Panel de Control)
 **Ruta:** `/dashboard`

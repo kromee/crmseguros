@@ -1,4 +1,4 @@
-# CRM Seguros Mexa — Memoria del Proyecto
+# CRM Seguros Vale — Memoria del Proyecto
 
 ## Descripción
 CRM corporativo para agente de seguros. Gestión de clientes, pólizas, prospectos, calendario, cobranza y pipeline comercial. Modelo **SaaS multi-tenant** con panel de plataforma para licencias y agencias.

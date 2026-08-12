@@ -51,7 +51,7 @@ async function main() {
   if (!tenant) {
     tenant = await prisma.tenant.create({
       data: {
-        name: "Seguros Mexa",
+        name: "Seguros Vale",
         slug: DEFAULT_TENANT_SLUG,
         status: "ACTIVE",
         planId: plan.id,

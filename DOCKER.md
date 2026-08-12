@@ -1,4 +1,4 @@
-# MySQL con Docker — CRM Seguros Mexa
+# MySQL con Docker — CRM Seguros Vale
 
 > **Solo desarrollo local.** Docker levanta MySQL en tu máquina para programar y probar.  
 > En **producción** la app usa MySQL en el servidor acordado (sin contenedores Docker).

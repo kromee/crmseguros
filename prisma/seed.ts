@@ -110,11 +110,11 @@ async function main() {
   );
   const plan = planRecords.find((p) => p.slug === SAAS_PRODUCT_CONFIG.defaultPlanSlug)!;
 
-  console.log("🏢 Creando tenant Seguros Mexa...");
+  console.log("🏢 Creando tenant Seguros Vale...");
   const tenant = await prisma.tenant.create({
     data: {
-      name: "Seguros Mexa",
-      slug: "seguros-mexa",
+      name: "Seguros Vale",
+      slug: "seguros-vale",
       slogan: "Innovando tu seguridad, protegiendo tu mañana.",
       status: "ACTIVE",
       planId: plan.id,
@@ -155,8 +155,8 @@ async function main() {
   const admin = await prisma.user.create({
     data: {
       tenantId: tenant.id,
-      name: "Admin Mexa",
-      email: "admin@segurosmexa.com",
+      name: "Admin Vale",
+      email: "admin@segurosvale.com",
       password: passwordHash,
       role: "TENANT_ADMIN",
       title: "Administrador",
@@ -167,7 +167,7 @@ async function main() {
     data: {
       tenantId: tenant.id,
       name: "M. Rodriguez",
-      email: "m.rodriguez@segurosmexa.com",
+      email: "m.rodriguez@segurosvale.com",
       password: passwordHash,
       role: "USER",
       title: "Broker Senior",
@@ -178,7 +178,7 @@ async function main() {
     data: {
       tenantId: tenant.id,
       name: "L. Fernández",
-      email: "l.fernandez@segurosmexa.com",
+      email: "l.fernandez@segurosvale.com",
       password: passwordHash,
       role: "USER",
       title: "Asesor",
@@ -195,7 +195,7 @@ async function main() {
     const name = NAMES[i];
     const loc = pick(CITIES);
     const isClient = i < 30;
-    const code = `SM-${String(1000 + i).padStart(4, "0")}`;
+    const code = `SV-${String(1000 + i).padStart(4, "0")}`;
 
     const contact = await prisma.contact.create({
       data: {
@@ -520,7 +520,7 @@ async function main() {
   console.log("✅ Seed completado exitosamente");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
   console.log("   👤 Usuarios:      4 (1 super admin + 3 tenant)");
-  console.log("   🏢 Tenant:        Seguros Mexa (plan anual)");
+  console.log("   🏢 Tenant:        Seguros Vale (plan anual)");
   console.log("   📇 Contactos:     50 (30 clientes + 20 prospectos)");
   console.log("   📋 Pólizas:       40");
   console.log("   💰 Pagos:         ~60");
@@ -531,9 +531,9 @@ async function main() {
   console.log("   📅 Eventos:       30 (incl. 5 demo recordatorios)");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
   console.log("   superadmin@crm.local / Admin123!  (SUPER_ADMIN)");
-  console.log("   admin@segurosmexa.com / Admin123!");
-  console.log("   m.rodriguez@segurosmexa.com / Admin123!");
-  console.log("   l.fernandez@segurosmexa.com / Admin123!");
+  console.log("   admin@segurosvale.com / Admin123!");
+  console.log("   m.rodriguez@segurosvale.com / Admin123!");
+  console.log("   l.fernandez@segurosvale.com / Admin123!");
 }
 
 main()

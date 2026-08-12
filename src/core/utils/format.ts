@@ -38,7 +38,7 @@ export function getDaysUntilExpiry(endDate: Date | string): number {
 
 export function generateContactCode(): string {
   const num = Math.floor(Math.random() * 9000) + 1000;
-  return `SM-${num}`;
+  return `SV-${num}`;
 }
 
 export function generateProspectCode(): string {

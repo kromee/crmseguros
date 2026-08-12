@@ -12,7 +12,7 @@ const MAX_CODE_RETRIES = 5;
 
 async function generateContactCode(tenantId: string): Promise<string> {
   const next = await contactRepository.nextCodeNumber(tenantId);
-  return `SM-${next}`;
+  return `SV-${next}`;
 }
 
 function isContactCodeConflict(error: unknown): boolean {

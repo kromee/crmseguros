@@ -69,7 +69,7 @@ export function ActivateForm() {
             <Label htmlFor="licenseKey">Clave de licencia</Label>
             <Input
               id="licenseKey"
-              placeholder="MEXA-XXXX-XXXX-XXXX"
+              placeholder="VALE-XXXX-XXXX-XXXX"
               className="uppercase tracking-wide"
               {...register("licenseKey")}
             />

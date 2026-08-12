@@ -17,7 +17,7 @@ async function generateProspectCode(tenantId: string): Promise<string> {
 
 async function generateContactCode(tenantId: string): Promise<string> {
   const next = await contactRepository.nextCodeNumber(tenantId);
-  return `SM-${next}`;
+  return `SV-${next}`;
 }
 
 const NEXT_ACTION_TO_EVENT_TYPE: Record<string, "LLAMADA" | "TAREA"> = {

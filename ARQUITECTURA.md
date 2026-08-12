@@ -1,4 +1,4 @@
-# Arquitectura — CRM Seguros Mexa
+# Arquitectura — CRM Seguros Vale
 
 ## Patrón General
 - **Clean Architecture Light** con **Feature-Based Architecture**

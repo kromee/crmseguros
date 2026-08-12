@@ -1,4 +1,4 @@
-# Base de Datos — CRM Seguros Mexa
+# Base de Datos — CRM Seguros Vale
 
 ## Motor: MySQL | ORM: Prisma
 
@@ -21,7 +21,7 @@
 | Campo | Tipo | Notas |
 |-------|------|-------|
 | id | VARCHAR(36) PK | UUID |
-| code | VARCHAR(20) UNIQUE | SM-XXXX, MX-XXXX |
+| code | VARCHAR(20) UNIQUE | SV-XXXX, MX-XXXX |
 | type | ENUM('CLIENT','PROSPECT') | |
 | fullName | VARCHAR(200) | |
 | phone | VARCHAR(20) | |

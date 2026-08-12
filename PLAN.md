@@ -1,4 +1,4 @@
-# Plan de Desarrollo — CRM Seguros Mexa
+# Plan de Desarrollo — CRM Seguros Vale
 
 > **Documento maestro de ejecución.** Todo el trabajo debe seguir este orden.  
 > No saltar fases sin cerrar la anterior. Actualizar checkboxes al completar tareas.
@@ -135,7 +135,7 @@ FASE 3 ─ Contactos (módulo central) ◄─── PRIORIDAD NEGOCIO
 |---|--------|--------|
 | 3.1 | `modules/contacts/schemas` — Zod create/update | ✅ |
 | 3.2 | `modules/contacts/repositories` — Prisma queries | ✅ |
-| 3.3 | `modules/contacts/services` — reglas (código SM-XXXX, tipo) | ✅ |
+| 3.3 | `modules/contacts/services` — reglas (código SV-XXXX, tipo) | ✅ |
 | 3.4 | `modules/contacts/actions` — Server Actions | ✅ |
 | 3.5 | `/contacts` — listado real + filtros + paginación | ✅ |
 | 3.6 | `/contacts/new` — formulario funcional con RHF + Zod + Server Action | ✅ |

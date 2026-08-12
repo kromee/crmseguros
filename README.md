@@ -26,7 +26,7 @@ Credenciales demo (seed):
 | Rol | Email | Contraseña |
 |-----|-------|------------|
 | Super admin | `superadmin@crm.local` | `Admin123!` |
-| Admin agencia | `admin@segurosmexa.com` | `Admin123!` |
+| Admin agencia | `admin@segurosvale.com` | `Admin123!` |
 
 ## Variables de entorno (producción)
 
@@ -148,7 +148,7 @@ Rollback: checkout del commit anterior + `npm ci` + `npm run build` + `pm2 reloa
 - Rutas de archivos validadas con `path.resolve` dentro de `uploads/` (sin path traversal)
 - Acceso a archivos acotado por tenant (+ super admin)
 - Rate limit de login en MySQL (5 intentos / 15 min por email)
-- Códigos de contacto `SM-XXXX` con reintento ante colisión única
+- Códigos de contacto `SV-XXXX` con reintento ante colisión única
 - **Sesión única por usuario**: si la cuenta ya tiene sesión activa, el nuevo inicio de sesión se **rechaza** (todos los roles, incl. super admin). Al cerrar sesión se libera el cupo. TTL alineado con la sesión JWT (8 h).
 
 ## Scripts útiles

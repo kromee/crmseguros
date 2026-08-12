@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata = { title: "Soporte — CRM Seguros" };
 
-const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL ?? "soporte@segurosmexa.com";
+const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL ?? "soporte@segurosvale.com";
 const SUPPORT_PHONE = process.env.SUPPORT_PHONE ?? "+52 55 1234 5678";
 const SUPPORT_WHATSAPP = process.env.SUPPORT_WHATSAPP_URL ?? "https://wa.me/525512345678";
 
@@ -20,7 +20,7 @@ export default async function SupportPage() {
       <div>
         <h1 className="text-2xl font-bold text-theme-primary">Soporte</h1>
         <p className="text-sm text-theme-muted mt-0.5">
-          Ayuda para {branding.name} y el CRM Seguros Mexa
+          Ayuda para {branding.name} y el CRM Vale
         </p>
       </div>
 

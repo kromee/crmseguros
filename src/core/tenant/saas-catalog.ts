@@ -75,11 +75,11 @@ export const SAAS_PRODUCT_CONFIG = {
   /** Plan asignado al tenant demo / piloto */
   defaultPlanSlug: "plan-agencia" as SaasPlanSlug,
   /** Tenant demo en desarrollo */
-  defaultTenantSlug: "seguros-mexa",
+  defaultTenantSlug: "seguros-vale",
   /** Días por defecto para usar una clave antes de activar */
   licenseKeyValidDaysDefault: 30,
   /** Formato de claves de licencia */
-  licenseCodePrefix: "MEXA",
+  licenseCodePrefix: "VALE",
   /** Vigencias disponibles al generar licencia / renovar */
   licenseTerms: ["MONTHLY", "ANNUAL", "MONTHS_24", "YEARS_4"] as const,
   /** Almacenamiento base por usuario (referencia comercial; 2 usuarios → 5 GB) */

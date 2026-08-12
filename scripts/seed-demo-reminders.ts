@@ -27,10 +27,10 @@ function addMinutes(date: Date, minutes: number) {
 
 async function main() {
   const admin = await prisma.user.findFirst({
-    where: { email: "admin@segurosmexa.com" },
+    where: { email: "admin@segurosvale.com" },
   });
   if (!admin) {
-    throw new Error("No existe admin@segurosmexa.com. Ejecuta primero: npm run db:seed");
+    throw new Error("No existe admin@segurosvale.com. Ejecuta primero: npm run db:seed");
   }
 
   const contact = await prisma.contact.findFirst({
@@ -121,7 +121,7 @@ async function main() {
   console.log(`   Contacto: ${contact.fullName} (${contact.code})`);
   console.log("");
   console.log("   Cómo probar:");
-  console.log("   1. Inicia sesión como admin@segurosmexa.com");
+  console.log("   1. Inicia sesión como admin@segurosvale.com");
   console.log("   2. Abre http://localhost:3000/reminders");
   console.log("   3. Deberías ver ~2 «Recordar ahora», ~2 «Próximo», 1 «Vencido»");
   console.log("   4. Pulsa «Completar» para quitar uno de la cola");

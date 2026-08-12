@@ -1,7 +1,7 @@
-# Sistema de Diseño — CRM Seguros Mexa
+# Sistema de Diseño — CRM Seguros Vale
 
 ## Identidad Visual
-- **Marca:** Seguros Mexa — CRM Corporativo
+- **Marca:** Seguros Vale — CRM Corporativo
 - **Tagline:** "Innovando tu seguridad, protegiendo tu mañana"
 
 ## Paleta de Colores

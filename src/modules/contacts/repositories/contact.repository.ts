@@ -191,7 +191,7 @@ export const contactRepository = {
       select: { code: true },
     });
     if (!last) return 1000;
-    const match = last.code.match(/SM-(\d+)/);
+    const match = last.code.match(/(?:SV|SM)-(\d+)/);
     return match ? Number(match[1]) + 1 : 1000;
   },
 };

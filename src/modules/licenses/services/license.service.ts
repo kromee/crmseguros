@@ -14,7 +14,7 @@ function randomSegment(length = 4): string {
 }
 
 export function formatLicenseCode(): string {
-  return `MEXA-${randomSegment()}-${randomSegment()}-${randomSegment()}`;
+  return `VALE-${randomSegment()}-${randomSegment()}-${randomSegment()}`;
 }
 
 export const licenseService = {
